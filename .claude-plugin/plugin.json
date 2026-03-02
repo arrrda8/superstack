@@ -1,0 +1,21 @@
+{
+  "name": "superstack",
+  "version": "1.0.0",
+  "description": "Full-stack developer plugin for building production-ready websites, tools, and SaaS solutions with award-winning design, expert copywriting, IT security, testing, CI/CD, accessibility, and auto-deployment.",
+  "author": {
+    "name": "Erdal Akkoc",
+    "email": "info@erdalakkoc.de"
+  },
+  "repository": "https://github.com/arrrda8/superstack-plugin",
+  "license": "MIT",
+  "keywords": [
+    "full-stack",
+    "saas",
+    "web-development",
+    "nextjs",
+    "design",
+    "security",
+    "testing",
+    "deployment"
+  ]
+}
