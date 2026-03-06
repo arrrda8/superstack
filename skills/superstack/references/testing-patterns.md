@@ -1,6 +1,6 @@
 # Testing Patterns Reference — Superstack
 
-Concrete test recipes for web projects. Read this during Phase 7 (Testing) to generate meaningful starter tests with the scaffold.
+Concrete test recipes for web projects. Tests are written DURING development (continuous testing), not as a separate phase after implementation. Every feature gets tests alongside its code.
 
 ## Table of Contents
 1. Vitest + Testing Library Setup
@@ -373,5 +373,67 @@ describe('Password reset', () => {
     const res = await POST_CONFIRM_RESET(createRequest({ token: validToken, newPassword: 'Another123!' }));
     expect(res.status).toBe(400);
   });
+});
+```
+
+---
+
+## 6. API Mocking with MSW (Mock Service Worker)
+
+MSW intercepts network requests at the service worker level for realistic API mocking.
+
+### Setup
+```bash
+bun add -d msw
+```
+
+### Define handlers
+```ts
+// mocks/handlers.ts
+import { http, HttpResponse } from 'msw';
+
+export const handlers = [
+  http.get('/api/users', () => {
+    return HttpResponse.json([
+      { id: '1', name: 'Test User', email: 'test@example.com' },
+    ]);
+  }),
+
+  http.post('/api/auth/login', async ({ request }) => {
+    const { email, password } = await request.json() as any;
+    if (email === 'test@example.com' && password === 'password') {
+      return HttpResponse.json({ token: 'mock-token' });
+    }
+    return HttpResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+  }),
+];
+```
+
+### Use in tests
+```ts
+// mocks/server.ts
+import { setupServer } from 'msw/node';
+import { handlers } from './handlers';
+export const server = setupServer(...handlers);
+
+// __tests__/setup.ts — add to existing setup
+import { server } from '@/mocks/server';
+beforeAll(() => server.listen());
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
+```
+
+### Override per test for error scenarios
+```ts
+import { server } from '@/mocks/server';
+import { http, HttpResponse } from 'msw';
+
+test('handles server error gracefully', async () => {
+  server.use(
+    http.get('/api/users', () => {
+      return HttpResponse.json({ error: 'Internal error' }, { status: 500 });
+    }),
+  );
+  // Component should show error state, not crash
 });
 ```

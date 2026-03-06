@@ -402,3 +402,93 @@ model WebhookDelivery {
 ```
 
 Retry logic: attempt immediately, then 5min, 30min, 2h, 24h. After 5 failures, deactivate the endpoint and notify the user.
+
+---
+
+## 10. Feature Flags
+
+### When to use
+Feature flags let you deploy code without releasing features. Use them for:
+- Gradual rollouts (1% → 10% → 50% → 100%)
+- A/B testing
+- Kill switches for problematic features
+- Beta access for specific users/plans
+
+### Simple DB-based approach (recommended for startups)
+```prisma
+model FeatureFlag {
+  id          String   @id @default(cuid())
+  key         String   @unique  // "new-dashboard", "ai-assistant"
+  enabled     Boolean  @default(false)
+  percentage  Int      @default(100) // rollout percentage
+  allowedPlans String[] // ["pro", "enterprise"]
+  createdAt   DateTime @default(now())
+}
+```
+
+```ts
+async function isFeatureEnabled(flagKey: string, user: User): Promise<boolean> {
+  const flag = await db.featureFlag.findUnique({ where: { key: flagKey } });
+  if (!flag || !flag.enabled) return false;
+  if (flag.allowedPlans.length > 0 && !flag.allowedPlans.includes(user.plan)) return false;
+  if (flag.percentage < 100) {
+    const hash = createHash('md5').update(user.id + flagKey).digest('hex');
+    const bucket = parseInt(hash.slice(0, 8), 16) % 100;
+    return bucket < flag.percentage;
+  }
+  return true;
+}
+```
+
+### Managed alternatives
+- **Flagsmith** (open source, self-hostable)
+- **LaunchDarkly** (enterprise)
+- **PostHog** (includes analytics)
+
+---
+
+## 11. Status Page
+
+### What to include
+- Current system status (operational / degraded / down)
+- Individual component status (API, Database, Auth, CDN)
+- Incident history with timeline
+- Scheduled maintenance announcements
+- Subscribe to updates (email / webhook)
+
+### Implementation options
+- **Openstatus** (open source, recommended)
+- **Instatus** (simple, affordable)
+- **Betterstack** (includes monitoring + status page)
+- Custom: health check endpoint + simple status page updating from monitoring results
+
+---
+
+## 12. Changelog Widget
+
+### In-app changelog
+Show users what's new directly in the product. Pattern:
+- "What's New" bell icon or menu item
+- Badge with unread count
+- List of entries: date, title, description, tag (new/improved/fixed)
+- Link to full changelog page
+
+### Database schema
+```prisma
+model ChangelogEntry {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  tag         String   // "new", "improved", "fixed"
+  publishedAt DateTime @default(now())
+}
+
+model ChangelogRead {
+  id      String   @id @default(cuid())
+  userId  String
+  readAt  DateTime @default(now())
+  @@unique([userId])
+}
+```
+
+Track last read timestamp per user. Show badge when new entries exist after user's last read.

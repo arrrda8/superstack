@@ -1,6 +1,8 @@
 # Accessibility Reference — Superstack (WCAG 2.1 AA)
 
-Accessibility is a legal requirement in the EU (European Accessibility Act, effective 2025) and directly impacts SEO, usability, and conversion rates. Read this during Phase 5 or whenever building UI components.
+Accessibility is a legal requirement in the EU since June 2025 (European Accessibility Act). Fines up to 100,000 EUR or 4% of annual revenue. It also directly impacts SEO, usability, and conversion rates. Read this during Phase 5 or whenever building UI components.
+
+> **EAA Compliance (since June 28, 2025):** E-commerce, banking, communication services, and transport apps MUST meet WCAG 2.1 AA. A public Accessibility Statement is required. Use axe-core for automated testing and manual screen reader testing (VoiceOver on Mac, NVDA on Windows).
 
 ## Table of Contents
 1. Semantic HTML

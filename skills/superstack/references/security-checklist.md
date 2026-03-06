@@ -357,3 +357,64 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something went wrong. Please try again.' });
 });
 ```
+
+---
+
+## 7. API Key Security
+
+### Generating secure API keys
+```ts
+import { randomBytes, createHash } from 'crypto';
+
+// Generate a key that's shown to the user ONCE
+function generateApiKey(): { key: string; hash: string; prefix: string } {
+  const key = `sk_live_${randomBytes(32).toString('hex')}`;
+  const hash = createHash('sha256').update(key).digest('hex');
+  const prefix = key.slice(0, 12); // for identification in UI
+  return { key, hash, prefix };
+}
+
+// Store only the hash and prefix in DB — never the raw key
+// On request: hash the provided key and compare to stored hash
+```
+
+### Webhook signature verification (generic pattern)
+```ts
+import { createHmac, timingSafeEqual } from 'crypto';
+
+function verifyWebhookSignature(
+  payload: string,
+  signature: string,
+  secret: string,
+): boolean {
+  const expected = createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex');
+
+  const sig = Buffer.from(signature);
+  const exp = Buffer.from(expected);
+
+  if (sig.length !== exp.length) return false;
+  return timingSafeEqual(sig, exp);
+}
+```
+
+---
+
+## 8. Auth Security Updates (2026)
+
+### Better Auth (new standard since 2025)
+Better Auth is the recommended auth solution for new projects (Auth.js team joined Better Auth in September 2025). See `references/auth-patterns.md` for full setup.
+
+### Passkey/WebAuthn
+Passkeys are mainstream — Google has 800M+ accounts using them. Consider offering passkeys alongside password-based auth. See `references/auth-patterns.md` for implementation.
+
+### Session security checklist
+- [ ] HTTP-only cookies (no JS access)
+- [ ] Secure flag (HTTPS only)
+- [ ] SameSite=Lax or Strict
+- [ ] Session rotation on privilege change
+- [ ] Absolute session timeout (24h typical)
+- [ ] Rate-limit login attempts (5 per 15 min)
+- [ ] 2FA secrets encrypted at rest (AES)
+- [ ] Backup codes hashed (not stored plaintext)
