@@ -1,7 +1,7 @@
 ---
 name: superstack
 description: |
-  Full-stack developer skill for building highly professional, production-ready websites, tools, and SaaS solutions with award-winning design, expert copywriting, built-in IT security, testing, CI/CD, and monitoring. Covers the entire stack: front-end (Framer Motion, GSAP, custom icons, responsive), back-end (server, API, database, auth with social login), hosting/deployment (including auto-deploy if credentials given), GDPR compliance, accessibility, performance, and multi-environment setup (DEV/TEST/PROD). ALWAYS triggers the brainstorming skill first to gather ALL requirements upfront before writing any code, so the agent can work through the entire build without interruption. Use this skill whenever the user wants to build a website, web app, landing page, SaaS product, dashboard, tool, or any full-stack project. Also trigger when the user mentions: "build me a site", "create a web app", "make a landing page", "SaaS", "full-stack", "startup MVP", "deploy", or any request that involves creating a functional web product from scratch or significantly rebuilding one.
+  Full-stack developer skill for building production-ready websites, web apps, SaaS products, dashboards, internal tools, e-commerce stores, and any web-based project from scratch. Delivers award-winning design (Framer Motion, GSAP, custom icons), expert copywriting, IT security, testing, CI/CD, accessibility, GDPR compliance, and deployment. Covers front-end, back-end (API, database, auth with social login), and hosting (auto-deploy if credentials provided). Always gathers all requirements upfront via brainstorming before writing code. Use this skill whenever the user wants to create, build, rebuild, redesign, or prototype any web product — whether it's a landing page, SaaS app, admin panel, portfolio site, MVP, online shop, booking platform, or internal tool. Also triggers on German requests like "Webseite bauen", "App erstellen", "neues Projekt", "Seite erstellen". Even if the user doesn't explicitly say "website" or "full-stack", trigger this skill when the request clearly involves building a functional web product with multiple pages, components, or features.
 ---
 
 # Superstack — Full-Stack Development Skill
@@ -14,69 +14,42 @@ Every project you build should feel like it was crafted by a boutique agency, no
 
 ---
 
-## Phase 0: Requirements Gathering (mandatory — collect ALL answers upfront)
+## Phase 0: Requirements Gathering (mandatory)
 
-Before writing a single line of code, invoke the **brainstorming** skill. This is non-negotiable.
+Before writing a single line of code, invoke the **brainstorming** skill. The goal is to collect every requirement upfront so the agent can work through Phases 1-11 without interruption.
 
-**Critical workflow rule**: Gather ALL requirements in this phase before proceeding. The goal is to ask every necessary question upfront so that after this phase, the agent can work through Phases 1-11 without needing to stop and ask more questions. Present the questions in logical groups, wait for all answers, then confirm the full spec with the user before moving on.
+Present questions in logical groups. Wait for all answers, confirm the full spec, then proceed.
 
 ### Group 1: Product & Audience
-- What is the product/service/tool?
-- Who is the target audience? (Be specific — not "businesses" but "solo SaaS founders doing $10k-$50k MRR who need to reduce churn")
-- What problem does it solve? What are the pain points?
-- Is there a competitor or inspiration site?
+- What is the product/service/tool? Who is the target audience (be specific)? What problem does it solve? Any competitor or inspiration sites?
 
 ### Group 2: Technical Foundation
-- **Tech stack**: Which framework? (Next.js, Nuxt, SvelteKit, Astro, etc.) Which CSS approach? (Tailwind, CSS Modules, styled-components?) Backend needs?
-- **Database**: Does this project need persistent data? If yes, which DB? (PostgreSQL, MongoDB, Supabase, PlanetScale, etc.)
-- **Authentication**: Is user auth needed? If yes: which provider? (NextAuth, Clerk, Supabase Auth, custom JWT?) Social login? (Google, GitHub, Apple, etc.)
-- **File uploads**: Does the product need file/image uploads? (Profile pictures, documents, media). If yes: S3, Cloudflare R2, Supabase Storage?
-- **Search**: Does the product need search functionality? (Algolia, Meilisearch, PostgreSQL full-text search)
-- **Internationalization (i18n)**: Multiple languages needed? Which ones? Auto-detect browser locale?
-- **State management**: For complex apps — which approach? (Zustand, Jotai, Redux Toolkit for client state? TanStack Query for server state?) Recommend based on complexity.
-- **Caching strategy**: Does the project need server-side caching? (Redis/Upstash for API responses, session data, rate limiting). Client-side caching strategy (TanStack Query, SWR)? Page caching (ISR, SSG)?
-- **Dark mode**: Should the product support dark mode? (Recommended for most modern products)
-- **PWA / Offline**: Should the product work offline or be installable as a PWA?
+- **Stack**: Framework (Next.js, Nuxt, SvelteKit, Astro?), CSS approach (Tailwind, CSS Modules?), backend needs?
+- **Data layer**: Database (PostgreSQL, Supabase, PlanetScale?), caching (Redis/Upstash?), search (Algolia, Meilisearch?)?
+- **Auth**: Provider (NextAuth, Clerk, Supabase Auth?), social login (Google, GitHub, Apple?)?
+- **Extras**: File uploads (S3, R2?), i18n, state management, dark mode, PWA/offline?
 
-### Group 3: Hosting, Deployment & Environments
-- **Hosting/Deployment**: Where will this live? (Vercel, Netlify, Railway, Hetzner VPS, AWS, Dokploy, self-hosted?)
-- **Deployment credentials**: Would you like to provide access credentials (API tokens, SSH keys, Vercel/GitHub tokens) so the agent can deploy the project directly? If yes, the agent will handle the full deployment pipeline including pushing to Git, connecting to the hosting platform, and deploying.
-- **Multi-environment setup**: Does the project need separate environments? (DEV / TEST / PROD). If yes: separate `.env` files per environment, separate database instances, separate deployment targets. Recommended for any serious SaaS product.
-- **Third-party integrations**: Payments (Stripe?), email (Resend, SendGrid?), analytics, CMS (Sanity, Contentful, Strapi)?
+### Group 3: Hosting & Deployment
+- Where will this live (Vercel, Netlify, Railway, Hetzner, Dokploy, AWS)?
+- Deployment credentials available for auto-deploy?
+- Multi-environment setup needed (DEV/TEST/PROD)?
+- Third-party integrations (Stripe, Resend, analytics, CMS)?
 
-### Group 4: SaaS / Tool / Platform Extras (ask if building a SaaS or tool)
-
-When the user is building a SaaS, tool, or platform, proactively ask about these features — they separate a hobby project from a real product. Prioritize based on product type (don't ask all at once for a simple tool):
-
-- **Admin Panel**: Admin dashboard needed? (User management, subscriptions, content moderation, analytics, feature flags)
-- **Affiliate / Referral Program**: Referral links, tracking, commission tiers, payout management?
-- **Onboarding Flow**: What happens after signup? (Welcome wizard, guided tour, sample data, empty states)
-- **Notification System**: In-app notifications, email digests, webhook events, Slack integration?
-- **Role & Permission System**: Different user roles? (Admin, member, viewer, custom roles, team/org permissions)
-- **Billing & Subscription Management**: Plan upgrades/downgrades, usage-based billing, invoicing, EU VAT handling, dunning?
-- **API / Developer Access**: Public API? (API key management, rate limiting, API docs, webhook delivery)
-- **Audit Log / Activity Feed**: Track who did what and when? (User-visible and/or internal)
-- **Multi-tenancy**: Teams/organizations? (Workspace switching, team invites, per-org billing)
-- **Customer Support**: Help widget, knowledge base, ticket system, live chat (Intercom/Crisp)?
-- **Changelog**: Changelog page, in-app update notifications?
-- **Status Page**: Public uptime/status page?
-
-See `references/saas-features.md` for implementation details on each.
+### Group 4: SaaS/Platform Features (if applicable)
+When building a SaaS or platform, proactively ask about: admin panel, affiliate/referral program, onboarding flow, notification system, roles/permissions, billing/subscriptions, API access, audit log, multi-tenancy, customer support, changelog, status page. See `references/saas-features.md` for implementation details.
 
 ### Group 5: Compliance & Legal
-- **GDPR**: Does this collect personal data? Depth needed: basic (cookie consent + privacy policy) or full (data deletion, export, consent management, DPA)?
-- **Imprint/Legal pages**: Required? (e.g., Impressum in Germany)
-- **Accessibility**: Target WCAG 2.1 AA compliance? (Recommended — and legally required in the EU from 2025)
+- GDPR depth: basic (cookie consent + privacy policy) or full (data deletion, export, consent management)?
+- Imprint/legal pages required (e.g., Impressum for Germany)?
+- Accessibility target (WCAG 2.1 AA recommended)?
 
 ### Group 6: Design Direction
-- What's the visual mood? (Minimal, bold, editorial, playful, dark, luxury?)
-- Any brand colors, fonts, or existing assets?
+- Visual mood (minimal, bold, editorial, playful, dark, luxury)?
+- Brand colors, fonts, existing assets?
 - Key animations/interactions desired?
-- Custom icon style? (Line art, filled, duotone, hand-drawn — avoid generic icon libraries that look AI-generated)
+- Custom icon style (line art, filled, duotone, hand-drawn)?
 
-### After gathering all answers
-
-Summarize the complete spec back to the user in a clear, organized format. Get explicit confirmation: "Does this look right? Anything to add or change?" Only after confirmation — proceed to Phase 1. From this point on, work through all phases without stopping unless a genuine ambiguity arises.
+After gathering all answers, summarize the spec and get explicit confirmation before proceeding.
 
 ---
 
@@ -85,31 +58,27 @@ Summarize the complete spec back to the user in a clear, organized format. Get e
 Great products are built on great messaging. Before any UI work, nail the copy.
 
 1. **Web research**: Search for competitors, target audience language, and industry positioning.
-2. **Identify pain points**: Map 3-5 core pain points. These become the backbone of all copy.
-3. **Craft the messaging hierarchy**: Hero headline (transformation, not features), subheadline (the how), section headlines (one pain point each), CTAs (specific, action-oriented).
-4. **Search for current best practices**: Copywriting frameworks evolve — search the web for the latest.
+2. **Pain point mapping**: Map 3-5 core pain points — these become the backbone of all copy.
+3. **Messaging hierarchy**: Hero headline (transformation, not features), subheadline (the how), section headlines (one pain point each), CTAs (specific, action-oriented).
+4. **Current best practices**: Search the web for the latest copywriting frameworks.
 
-Apply these principles: write for scanners first; specificity beats cleverness; address objections proactively; social proof is non-negotiable; use PAS (Pain → Agitation → Solution) framework.
-
-See `references/copywriting-framework.md` for the full deep-dive.
+Apply: write for scanners first, specificity beats cleverness, address objections proactively, use PAS (Pain → Agitation → Solution). See `references/copywriting-framework.md` for the full deep-dive.
 
 ---
 
 ## Phase 2: Design System & Visual Direction
 
-### Non-negotiable design rules
+### Core design principles
 
-1. **Does NOT look AI-generated.** No generic gradients, no symmetric 3-column grids, no "Welcome to [Product]", no default shadcn/ui without heavy customization, no standard Lucide/Heroicons/Font Awesome icons that every AI tool uses.
+1. **Does NOT look AI-generated.** No generic gradients, no symmetric 3-column grids, no "Welcome to [Product]", no default shadcn/ui without heavy customization, no standard Lucide/Heroicons/Font Awesome icons.
 
-2. **Custom or curated icons.** Choose distinctive icon sets that match the brand personality: Phosphor Icons (varied weights), Tabler Icons, Iconoir, custom SVG illustrations, or hand-picked subsets. If using an icon library, customize the stroke width, size, and color to feel intentional — not default.
+2. **Custom or curated icons.** Distinctive sets matching brand personality: Phosphor Icons, Tabler Icons, Iconoir, or custom SVGs. Customize stroke width, size, and color to feel intentional.
 
-3. **Responsive from the ground up.** Every component must work flawlessly at: 375px (mobile), 768px (tablet), 1024px (laptop), 1440px (desktop). Use `clamp()` for fluid typography, spacing, and layout. Mobile navigation should be creative — not a boring hamburger slide-in.
+3. **Responsive from the ground up.** Every component works at 375px, 768px, 1024px, 1440px. Use `clamp()` for fluid typography and spacing. Creative mobile navigation — not a boring hamburger slide-in.
 
-4. **Dark mode** (if selected): Not just inverted colors. Dark backgrounds should be warm (slight tint), text off-white (not pure #fff), accents slightly brighter/more saturated.
+4. **Dark mode** (if selected): Warm dark backgrounds (slight tint), off-white text (not pure #fff), slightly brighter/more saturated accents.
 
-Draw inspiration from **Awwwards.com**, **Dribbble.com**, **Codrops.net**.
-
-See `references/design-patterns.md` for specific CSS/animation patterns, Framer Motion recipes, and GSAP scroll techniques.
+Draw inspiration from Awwwards.com, Dribbble.com, Codrops.net. See `references/design-patterns.md` for CSS/animation patterns, Framer Motion recipes, and GSAP scroll techniques.
 
 ---
 
@@ -117,77 +86,40 @@ See `references/design-patterns.md` for specific CSS/animation patterns, Framer 
 
 Generate a complete, production-ready project the user can `npm install && npm run dev` immediately.
 
-### What every scaffold must include
+### Every scaffold includes
 
-1. **Fully working front-end**: All pages, sections, components with real copy — not lorem ipsum.
-2. **Fully responsive**: Mobile-first. Tested at 375px, 768px, 1024px, 1440px.
-3. **Every UI state handled** — This is what separates professional apps from amateur ones. Every page and component must account for:
-   - **Loading states**: Skeleton screens (not spinners) that match the layout of the loaded content. Use Framer Motion for smooth skeleton-to-content transitions.
-   - **Error states**: Error boundaries at page and section level. Show a clear message with a retry action — not a white screen. API errors display user-friendly messages, not raw error codes.
-   - **Empty states**: When a list/table/dashboard has no data, show an illustration or icon + a clear CTA ("No projects yet — create your first one"). Empty states are onboarding opportunities.
-   - **Offline states** (if PWA): Show a clear offline indicator and cached content where possible.
-   - **Custom error pages**: Custom 404 (not found) and 500 (server error) pages that match the site's design and provide navigation back to useful pages.
-   - **Partial loading**: For dashboards with multiple data sources, load and display each section independently — don't make the whole page wait for the slowest API call.
-4. **Animations wired up**: Framer Motion + GSAP imported, configured, and working. Respect `prefers-reduced-motion`.
-5. **Custom icons**: Not default icon library. Curated or custom SVGs.
-6. **SEO**: Meta tags, Open Graph, JSON-LD structured data, semantic HTML, heading hierarchy, alt texts, sitemap, robots.txt, canonical URLs.
-7. **Dark mode** (if selected): CSS custom properties, `prefers-color-scheme`, toggle with persistence.
-8. **State management** (when applicable): Configured and wired up based on brainstorming decision. Client state (Zustand/Jotai), server state (TanStack Query/SWR), global state patterns.
-9. **Caching** (when applicable): Server-side cache (Redis/Upstash) configured, client-side cache (TanStack Query) with stale times, page caching strategy (ISR/SSG).
-10. **Back-end** (when applicable): API routes, DB schema + migrations + seed data, auth flow (including social login if selected), input validation (Zod), error handling, rate limiting.
-11. **File upload** (when applicable): Upload component, storage integration, presigned URLs, type/size validation.
-12. **Search** (when applicable): Search component, backend integration, debounced input, result highlighting.
-13. **Transactional email templates** (when applicable): Welcome email, password reset, invoice, notifications. Use React Email or MJML. Include all templates in the scaffold — not just "TODO: add email".
-14. **GDPR compliance** (when applicable): Cookie consent (granular), privacy policy, terms of service, data deletion/export, consent logging, Impressum.
-15. **i18n** (when applicable): Translation setup, language switcher component, locale detection.
-16. **PWA** (when applicable): Service worker, manifest.json, offline fallback, install prompt.
-17. **Multi-environment config**: Separate `.env.development`, `.env.test`, `.env.production` files. Document which variables differ per environment. If multi-stage environments were requested: separate deployment configs for DEV, TEST, PROD.
-18. **Database seeding**: Seed script with realistic sample data for development. Migration files for schema changes.
-19. **Environment configuration**: `.env.example` with all variables documented.
-20. **README**: Prerequisites, install, environment setup, dev server, test commands, deployment.
+1. **Working front-end** with real copy (not lorem ipsum), all pages and components
+2. **Fully responsive** at all breakpoints (mobile-first)
+3. **Every UI state handled** — loading (skeleton screens, not spinners), error (boundaries + retry), empty (illustration + CTA), offline (if PWA), custom 404/500 pages, partial loading for dashboards
+4. **Animations** wired up (Framer Motion + GSAP), respecting `prefers-reduced-motion`
+5. **Custom icons** — curated or custom SVGs, not defaults
+6. **SEO basics** — meta tags, OG, JSON-LD, semantic HTML, sitemap, robots.txt, canonical URLs
+7. **Dark mode** (if selected) with CSS custom properties and persistence
+8. **State management & caching** configured per brainstorming decisions
+9. **Back-end** (if applicable): API routes, DB schema + migrations + seeds, auth flow, Zod validation, rate limiting
+10. **File upload, search, email templates, GDPR, i18n, PWA** — each wired up if selected
+11. **Multi-environment config**: `.env.development`, `.env.test`, `.env.production`
+12. **README** with prerequisites, install, dev, test, and deploy instructions
 
 ---
 
-## Phase 4: IT Security Audit (continuous)
+## Phase 4: IT Security Audit
 
-Security is baked into every phase. After scaffold generation, run a full security sweep.
+Security is baked into every phase — not bolted on at the end. After scaffold generation, run a full sweep.
 
-**Continuous checks**: Injection vulnerabilities, auth flaws, authorization gaps, data exposure.
+Check for: injection vulnerabilities (XSS, SQL, NoSQL), auth flaws, authorization gaps (IDOR), data exposure, CSRF, insecure headers, dependency vulnerabilities (`npm audit`), environment leaks, client-side security issues.
 
-**Full sweep categories**: Input validation & sanitization, authentication & session security, HTTP security headers, API security, database security, dependency audit (`npm audit`), environment & deployment security, client-side security.
-
-**Goal**: Zero Critical and zero High vulnerabilities before delivery.
-
-See `references/security-checklist.md` for detailed patterns and fix templates.
+Goal: zero Critical and zero High vulnerabilities before delivery. See `references/security-checklist.md` for detailed patterns and fix templates.
 
 ---
 
 ## Phase 5: Accessibility (WCAG 2.1 AA)
 
-Accessibility is not optional — it's a legal requirement in the EU (European Accessibility Act) and the right thing to do.
+Accessibility improves SEO, usability, and conversion — and it's a legal requirement in the EU since 2025. Build it in from the start rather than retrofitting it.
 
-### Mandatory accessibility requirements
-- **Semantic HTML**: Use correct elements (`<nav>`, `<main>`, `<article>`, `<button>`, `<a>`) — not `<div>` for everything.
-- **Keyboard navigation**: Every interactive element reachable and operable with keyboard alone. Visible focus indicators (not just browser default — style them).
-- **Focus management**: Focus traps in modals/dialogs. Return focus to trigger element on close. Skip-to-content link.
-- **ARIA attributes**: `aria-label` for icon buttons, `aria-expanded` for dropdowns, `aria-live` for dynamic content, `role` attributes where semantic HTML isn't sufficient.
-- **Color contrast**: WCAG AA minimum (4.5:1 for text, 3:1 for large text and UI elements). Test with a contrast checker tool.
-- **Reduced motion**: Wrap all animations in `prefers-reduced-motion` media query. Provide a toggle in UI. Framer Motion: use `useReducedMotion()` hook. GSAP: check `window.matchMedia('(prefers-reduced-motion: reduce)')`.
-- **Screen reader testing**: Verify all content is announced correctly. Alt text on all images. Form labels connected to inputs. Error messages associated with fields via `aria-describedby`.
-- **Touch targets**: Minimum 44x44px for all interactive elements on mobile.
-- **Form accessibility**: Labels for every input, error messages linked to fields, fieldsets/legends for groups, autocomplete attributes.
-- **Content structure**: Proper heading hierarchy (h1 → h2 → h3, no skipping). Landmarks (`<header>`, `<nav>`, `<main>`, `<footer>`). Page titles that reflect content.
+Key areas: semantic HTML, keyboard navigation with visible focus, ARIA attributes, color contrast (4.5:1 minimum), reduced motion support, form accessibility, 44x44px touch targets.
 
-### Accessibility checklist (verify before delivery)
-- [ ] All interactive elements keyboard-accessible with visible focus
-- [ ] Skip-to-content link present
-- [ ] Color contrast meets WCAG AA (4.5:1 / 3:1)
-- [ ] All images have meaningful alt text (or `alt=""` for decorative)
-- [ ] Forms fully labeled with error association
-- [ ] Animations respect `prefers-reduced-motion`
-- [ ] Modal focus trapping works correctly
-- [ ] Screen reader announces all content logically
-- [ ] Touch targets >= 44x44px on mobile
+See `references/accessibility.md` for the full guide and verification checklist.
 
 ---
 
@@ -195,7 +127,7 @@ Accessibility is not optional — it's a legal requirement in the EU (European A
 
 **Targets**: LCP < 2.5s, CLS < 0.1, INP < 200ms, FCP < 1.8s, TTFB < 800ms.
 
-**Optimize**: Images (next/image, WebP/AVIF, lazy-load), fonts (self-host, subset, `font-display: swap`), JavaScript (code-split, dynamic import, < 100KB gzipped main bundle), CSS (purge unused), server (SSG/ISR, Cache-Control headers, CDN, edge functions), animations (GPU-accelerated transforms/opacity only, test on low-end devices).
+**Optimize**: Images (next/image, WebP/AVIF, lazy-load), fonts (self-host, subset, `font-display: swap`), JavaScript (code-split, dynamic import, < 100KB gzipped main bundle), CSS (purge unused), server (SSG/ISR, Cache-Control headers, CDN, edge functions), animations (GPU-accelerated transforms/opacity only).
 
 ---
 
@@ -203,128 +135,68 @@ Accessibility is not optional — it's a legal requirement in the EU (European A
 
 Every scaffold includes a testing setup and starter tests.
 
-**Unit tests** (Vitest + Testing Library): Config, setup file, 3-5 starter tests for critical components. **E2E tests** (Playwright): Config, auth flow test, navigation test. **API tests**: Valid/invalid input, auth checks, rate limiting.
+**Unit** (Vitest + Testing Library): config, setup, 3-5 critical component tests. **E2E** (Playwright): config, auth flow, navigation. **API**: valid/invalid input, auth checks, rate limiting.
 
-Scripts in package.json: `test`, `test:run`, `test:e2e`, `test:e2e:ui`.
-
-See `references/testing-patterns.md` for test recipes.
+Scripts in package.json: `test`, `test:run`, `test:e2e`, `test:e2e:ui`. See `references/testing-patterns.md` for recipes.
 
 ---
 
 ## Phase 8: CI/CD Pipeline
 
-GitHub Actions pipeline: lint → type-check → test → build → E2E. Deployment config adapted to chosen hosting. If multi-environment: separate workflows for DEV, TEST, PROD with environment-specific secrets.
-
-See Phase 8 details in previous version for the full YAML template.
+GitHub Actions: lint → type-check → test → build → E2E. Deployment config for chosen hosting. If multi-environment: separate workflows for DEV, TEST, PROD with environment-specific secrets.
 
 ---
 
 ## Phase 9: Analytics & Monitoring
 
-**Analytics**: Privacy-friendly (Plausible, Umami, PostHog) or standard (Vercel Analytics, GA4). **Error monitoring**: Sentry recommended. **Uptime**: Health check endpoint + external monitoring. **Logging**: Structured JSON, log levels, request ID tracing, shipped to Axiom/Logtail/Datadog. Never log sensitive data.
+**Analytics**: Privacy-friendly (Plausible, Umami, PostHog) or standard (Vercel Analytics, GA4). **Error monitoring**: Sentry. **Uptime**: Health check endpoint + external monitoring. **Logging**: Structured JSON, log levels, request ID tracing. Never log sensitive data.
 
 ---
 
-## Phase 10: SEO Deep-Dive
+## Phase 10: SEO & GEO Deep-Dive
 
-Beyond the basics in Phase 3, apply comprehensive SEO:
+Beyond the basics in Phase 3 — comprehensive technical SEO, schema markup, content optimization, and Generative Engine Optimization for AI search visibility.
 
-- **Technical SEO**: XML sitemap (auto-generated), robots.txt, canonical URLs on every page, hreflang tags (if i18n), 301 redirects for old URLs, clean URL structure.
-- **Schema markup**: JSON-LD for Organization, Product, FAQ, Breadcrumb, Article — whichever applies to the project type.
-- **Open Graph & Twitter Cards**: Full OG metadata with custom images per page. Twitter Card markup. Test with sharing debuggers.
-- **Performance as SEO**: Core Web Vitals directly affect rankings. Ensure Phase 6 targets are met.
-- **Content SEO**: Proper heading hierarchy (single h1), descriptive meta titles (< 60 chars) and descriptions (< 160 chars), internal linking structure.
-- **Image SEO**: Descriptive file names (not `image-1.png`), alt text, proper sizing, next-gen formats.
-- **Crawlability**: No orphan pages, proper internal linking, breadcrumb navigation, clean HTML output.
-
-### GEO — Generative Engine Optimization (AI Search Visibility)
-
-Traditional SEO gets you clicked — GEO gets you quoted. With ChatGPT at 800M+ weekly users, Perplexity handling 780M monthly queries, and Google AI Overviews appearing in up to 60% of searches, optimizing for AI-generated answers is no longer optional.
-
-**Content structure for AI retrieval**:
-- AI engines break pages into individual passages and evaluate each one independently. Every section must stand on its own as a complete, quotable answer.
-- Start each section with a clear, direct answer — then expand with context. AI engines pull from the first sentence under a heading.
-- Add FAQ sections with clear question-and-answer pairs. AI engines rely heavily on these when building responses.
-- Use clean heading hierarchy (H2/H3) to signal the topic of each passage. Add brief TL;DR statements under key headings.
-
-**Technical accessibility for AI crawlers**:
-- Check `robots.txt` — many sites block AI crawlers (GPTBot, ClaudeBot, PerplexityBot) without realizing it. Explicitly allow them if AI visibility is desired.
-- Cloudflare's default config may block AI bots — verify this if using Cloudflare.
-- Server-side render all important content. AI crawlers typically cannot execute JavaScript — they only read the HTML your server returns. This means: no critical content behind client-side rendering only.
-
-**Entity authority & brand signals**:
-- GEO focuses on entities (brand, people, products), not just pages. Strengthen entity signals through consistent naming, structured data (JSON-LD Organization, Person, Product schemas), and cross-platform presence.
-- E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness) is critical. Transparent author bios, reputable citations, and regular content updates help AI engines trust your content.
-
-**Content that gets cited by AI**:
-- Original research, proprietary data, unique frameworks, and benchmark studies attract AI citations — AI engines cite what nobody else has published.
-- Statistics with sources are highly citable: "Companies using X see a 34% improvement in Y (Source: [Study])."
-- Maintain content freshness — add "Last updated" timestamps and refresh cornerstone content regularly. AI engines weigh recency when selecting sources.
-
-**Cross-platform presence**:
-- Reddit, LinkedIn, and YouTube are among the top cited sources by LLMs. Ensure the brand has valuable content on these platforms.
-- Earned media (reviews on G2/Capterra/Trustpilot, industry press, community discussions) signals credibility to AI engines more strongly than brand-owned content.
-- Get featured in existing high-ranking lists and comparison articles — AI often pulls directly from top Google results.
-
-**Implementation in the scaffold**:
-- Ensure all content pages are server-side rendered (not client-only)
-- Add FAQ schema markup (JSON-LD FAQPage) where applicable
-- Structure content with clear, self-contained sections under descriptive headings
-- Include `robots.txt` entries that explicitly allow AI crawlers: `User-agent: GPTBot`, `User-agent: ClaudeBot`, `User-agent: PerplexityBot` — with `Allow: /`
-- Add "Last updated" metadata to content pages
-- Search for the latest GEO best practices during implementation — this field evolves rapidly
-
-If the SEO skill is available, invoke it for additional depth.
+See `references/seo-geo.md` for the full guide including JSON-LD templates, GEO strategies, and implementation checklist.
 
 ---
 
 ## Phase 11: Deployment (if credentials provided)
 
-If the user provided hosting credentials in Phase 0, handle the full deployment:
+If hosting credentials were provided in Phase 0:
+1. Git init, proper `.gitignore`, initial commit
+2. Push to GitHub (via `gh` CLI if available)
+3. Connect to hosting platform (Vercel, Dokploy, VPS, Docker — adapt to chosen platform)
+4. Configure environment variables per stage
+5. Verify: site live, SSL active, all routes work
+6. Domain setup guidance if applicable
 
-1. **Initialize Git repo**: `git init`, proper `.gitignore`, initial commit.
-2. **Push to GitHub**: Create repo (if `gh` CLI available), push code.
-3. **Connect to hosting**:
-   - **Vercel**: `vercel link` + `vercel env` + `vercel deploy --prod`
-   - **Dokploy**: Connect via API, configure build settings, deploy
-   - **VPS/self-hosted**: SSH into server, clone repo, install dependencies, build, configure PM2/systemd, set up Nginx/Caddy reverse proxy, configure SSL (Let's Encrypt)
-   - **Docker**: Build image, push to registry, deploy to target
-4. **Configure environment variables** on the hosting platform for each stage (DEV/TEST/PROD if applicable).
-5. **Verify deployment**: Check that the site is live, SSL is active, all routes work.
-6. **Set up domain** (if provided): DNS configuration guidance, SSL certificate verification.
-
-If no credentials were provided, generate deployment documentation with step-by-step instructions for the chosen platform.
+Without credentials: generate step-by-step deployment docs for the chosen platform.
 
 ---
 
 ## Quality Checklist (verify before delivery)
 
 ### Design
-- [ ] Does NOT look AI-generated — no generic gradients, grids, or icons
-- [ ] Icons are custom or curated — not default Lucide/Heroicons
-- [ ] Typography is distinctive and well-paired
-- [ ] Fully responsive at 375px, 768px, 1024px, 1440px
-- [ ] Dark mode works correctly (if selected)
-- [ ] Animations are purposeful, respect reduced-motion
+- [ ] Does NOT look AI-generated
+- [ ] Icons are custom or curated
+- [ ] Fully responsive at all breakpoints
+- [ ] Dark mode works (if selected)
+- [ ] Animations purposeful, respect reduced-motion
 
 ### Code
 - [ ] TypeScript types complete (no `any`)
-- [ ] Components properly decomposed
-- [ ] Error boundaries, loading states, empty states all handled
+- [ ] Error boundaries, loading/empty states handled
 - [ ] Tests pass (`npm test` and `npm run test:e2e`)
+- [ ] `npm run build` succeeds
 
 ### Copy
 - [ ] Headlines address pain points, not features
 - [ ] CTAs specific and action-oriented
 - [ ] No lorem ipsum or TODO placeholders
-- [ ] Email templates written with real copy
 
 ### Technical
-- [ ] All imports resolve, `npm run build` succeeds
-- [ ] Package.json has all dependencies
 - [ ] `.env.example` documented
-- [ ] Multi-environment configs in place (if applicable)
-- [ ] Database seed data works
 - [ ] Security checklist passed
 - [ ] Accessibility checklist passed
 - [ ] Performance targets met
@@ -333,62 +205,36 @@ If no credentials were provided, generate deployment documentation with step-by-
 
 ## Phase 12: Optional Extras (ask at the end)
 
-After the project is built, tested, and deployed, ask the user if they want any of these additional deliverables:
+After the project is built, tested, and deployed, offer:
 
 ### Cost Estimation
-"Would you like a monthly cost estimation for running this product?"
-
-If yes, calculate and present a breakdown:
-- **Hosting**: Vercel Pro ($20/mo), Railway ($5+), VPS ($5-50/mo depending on specs)
-- **Database**: Supabase free tier → Pro ($25/mo), PlanetScale ($29/mo), managed PostgreSQL ($15-50/mo)
-- **Email sending**: Resend (free up to 3K/mo, then $20/mo), SendGrid (free 100/day)
-- **Authentication**: Most providers free up to X users, then paid
-- **File storage**: S3/R2 costs per GB stored + bandwidth
-- **Analytics**: Plausible ($9/mo), PostHog (free self-hosted), Vercel Analytics (free with Pro)
-- **Error monitoring**: Sentry (free tier, then $26/mo)
-- **Domain**: ~$10-15/year
-- **SSL**: Free with Let's Encrypt / hosting provider
-- **Total estimated**: Sum with ranges for different usage levels (100 users, 1K users, 10K users)
-
-Present as a clean table with low/medium/high usage scenarios.
+Monthly cost breakdown for hosting, DB, email, auth, storage, analytics, monitoring, domain — presented as a table with low/medium/high usage scenarios.
 
 ### DSGVO-Quality Legal Texts (German market)
-"Would you like jurisdiction-aware legal texts (DSGVO/German law compliant)?"
-
-If yes, generate high-quality legal pages:
-- **Impressum**: All legally required fields (Name, Adresse, Kontakt, Handelsregister, USt-IdNr., verantwortlich für Inhalt nach §18 MStV). Research current requirements via web search.
-- **Datenschutzerklärung**: Full DSGVO-compliant privacy policy — not a generic template. Include: Verantwortlicher, Rechtsgrundlagen (Art. 6 DSGVO), specific data processing descriptions for each tool used (analytics, Stripe, Supabase, etc.), Betroffenenrechte, Auftragsverarbeitung, Cookie details with retention periods, Widerspruchsrecht. Search for current DSGVO privacy policy best practices.
-- **AGB / Terms of Service**: If SaaS — include Vertragsschluss, Widerrufsrecht (if B2C), Haftungsbeschränkung, Datenschutzhinweis, Kündigungsbedingungen.
-- **Cookie-Richtlinie**: Detailed cookie table with name, purpose, provider, duration, type for every cookie used.
-
-Note: Always add a disclaimer that these texts are AI-generated and should be reviewed by a lawyer before going live.
+Impressum, Datenschutzerklaerung, AGB, Cookie-Richtlinie — DSGVO-compliant, specific to the tools used. Always add a disclaimer that AI-generated legal texts should be reviewed by a lawyer.
 
 ### Extended Documentation
-"Would you like extended documentation beyond the README?"
-
-If yes, generate:
-- **API Documentation**: OpenAPI/Swagger spec auto-generated from route definitions. Interactive API playground. Authentication guide. Code examples in JavaScript, Python, cURL.
-- **Component Library Overview**: Document all UI components with their props, variants, and usage examples. If Storybook is desired, set up Storybook with stories for each component.
-- **Architecture Decision Records (ADRs)**: Document key technical decisions made during the build — why this tech stack, why this DB, why this auth provider, why this caching strategy. Format: Context → Decision → Consequences.
+API docs (OpenAPI/Swagger), component library overview, Architecture Decision Records (ADRs).
 
 ---
 
 ## Interaction style
 
-Throughout the process, communicate like a senior developer and creative director would:
-- Be opinionated — recommend the best approach, explain why, but let the user override
-- Show your work — explain design decisions, not just the code
-- Be thorough — don't skip "boring" parts like error handling, loading states, or email templates
+- Be opinionated — recommend the best approach, explain why, let the user override
+- Show your work — explain design decisions, not just code
+- Be thorough — don't skip error handling, loading states, or email templates
 - After Phase 0: work autonomously through all phases without unnecessary interruptions
 
 ---
 
 ## Reference files
 
-For detailed guidance, read these references as needed:
+Read these as needed during the relevant phases:
 
 - `references/design-patterns.md` — CSS/animation patterns, Framer Motion + GSAP recipes, layout techniques
 - `references/copywriting-framework.md` — Research process, headline formulas, section-by-section writing guide
 - `references/security-checklist.md` — Vulnerability patterns, fix templates, hardening guides
 - `references/testing-patterns.md` — Vitest, Playwright, API test recipes and setup
 - `references/saas-features.md` — Admin panel, affiliate, onboarding, roles, billing, multi-tenancy guides
+- `references/accessibility.md` — WCAG 2.1 AA guide with verification checklist
+- `references/seo-geo.md` — Technical SEO, GEO for AI search, JSON-LD templates
