@@ -330,12 +330,258 @@ API docs (OpenAPI/Swagger), component library overview (Storybook), Architecture
 
 ---
 
+## Parallel Agent Strategy (MANDATORY)
+
+Use parallel agents in EVERY phase to maximize speed and quality. Launch independent workstreams simultaneously.
+
+### Phase 0 Research Sprint
+After gathering user requirements, launch parallel research agents BEFORE writing the concept document:
+- **Agent 1**: Competitor analysis — search 3-5 competitors, analyze features, design, pricing
+- **Agent 2**: Design inspiration — search Awwwards, Dribbble, specific industry sites
+- **Agent 3**: Tech validation — verify library compatibility, check for known issues, bundle sizes
+- **Agent 4**: Pricing research — research SaaS pricing in the niche, infrastructure costs
+- **Agent 5**: Legal requirements — check industry-specific compliance (healthcare, finance, etc.)
+
+### Phase 1-3 Parallel Build
+- **Agent A**: Copywriting research + content writing
+- **Agent B**: Design system + component library setup
+- **Agent C**: Backend scaffold (DB schema, auth, API routes)
+- **Agent D**: Frontend scaffold (pages, layouts, navigation)
+
+### Phase 4-6 Parallel Quality
+- **Agent A**: Security audit
+- **Agent B**: Accessibility audit
+- **Agent C**: Performance audit + optimization
+
+### Phase 7-9 Parallel Ops
+- **Agent A**: Test writing (unit + E2E)
+- **Agent B**: CI/CD pipeline + Docker
+- **Agent C**: Git workflow + documentation
+
+### Phase 10-12 Parallel Integration
+- **Agent A**: Tracking pixels + consent
+- **Agent B**: Monitoring + logging
+- **Agent C**: SEO + GEO optimization
+
+---
+
+## Quality Gates (enforce between phases)
+
+Before moving to the next phase, verify:
+
+| Gate | Check | Command |
+|---|---|---|
+| After Phase 3 (Scaffold) | Build succeeds | `bun run build` |
+| After Phase 3 (Scaffold) | No TypeScript errors | `bun run typecheck` |
+| After Phase 4 (Security) | Zero Critical/High vulns | Security checklist |
+| After Phase 5 (A11y) | WCAG 2.1 AA pass | `axe-core` or manual checklist |
+| After Phase 6 (Perf) | CWV targets met | Lighthouse CI |
+| After Phase 7 (Tests) | All tests pass | `bun test && bun test:e2e` |
+| After Phase 8 (CI/CD) | Pipeline green | GitHub Actions |
+| After Phase 13 (Deploy) | Site live + SSL | Manual verification |
+
+If a gate fails, fix issues before proceeding. Do NOT skip gates.
+
+---
+
+## Checkpoint Summaries
+
+After completing each phase, output a brief checkpoint summary:
+
+```
+### Phase X Complete
+- What was done: [2-3 bullet points]
+- Key decisions: [any notable choices made]
+- Issues found: [any problems and how they were resolved]
+- Next: Phase X+1 — [brief description]
+```
+
+This keeps the user informed and creates a decision log for the project.
+
+---
+
+## Smart Defaults
+
+When the user has no strong preference, use these defaults without asking:
+
+| Decision | Default | Why |
+|---|---|---|
+| Framework | Next.js 15 (App Router) | Best ecosystem, RSC, Vercel deploy |
+| CSS | Tailwind v4 + shadcn/ui | Fastest DX, customizable |
+| Auth | Better Auth | Auth.js team joined (Sept 2025), most complete |
+| Database | Supabase (PostgreSQL) | RLS, realtime, storage, auth built-in |
+| ORM | Drizzle ORM | Edge-compatible, type-safe, lightweight |
+| State | Zustand + TanStack Query | Server/client state separation |
+| Email | Resend + React Email | Developer-friendly, great DX |
+| Linting | Biome | Replaces ESLint + Prettier, faster |
+| Package Manager | Bun | Fastest, built-in test runner |
+| Icons | Phosphor Icons | Consistent, customizable, 6 weights |
+| Analytics | PostHog | Privacy-friendly, feature flags, experiments |
+| Monitoring | Sentry | Industry standard, source maps, tunnel route |
+| Hosting | Vercel | Zero-config Next.js deploy |
+| Animations | Framer Motion + GSAP | FM for UI, GSAP for scroll |
+| Forms | React Hook Form + Zod | Best validation DX |
+| URL State | nuqs | Type-safe search params |
+
+Only ask the user when the choice meaningfully impacts the project direction (e.g., self-hosted vs managed, payment provider, specific integrations).
+
+---
+
+## Scaffolding Templates
+
+Use these as starting points based on project type. Adapt to user requirements.
+
+### SaaS Template
+Auth, dashboard, billing (Stripe), team management, settings, onboarding wizard, admin panel, landing page with pricing.
+
+### Landing Page Template
+Hero, pain/solution sections, social proof, features, pricing, FAQ, CTA, footer. Lenis + GSAP scroll storytelling.
+
+### E-Commerce Template
+Product catalog, cart, checkout (Stripe), order management, inventory, customer accounts, admin panel.
+
+### Internal Tool / Dashboard Template
+Data tables, charts, filters, CRUD operations, role-based access, export functionality.
+
+### Portfolio Template
+Project showcase, about, contact form, blog (MDX), case studies. Heavy on animations and visual storytelling.
+
+---
+
+## Design Token System
+
+Every project starts with a `tokens.css` (or `theme.ts`) defining the design foundation:
+
+```css
+/* tokens.css — loaded in globals.css */
+@theme {
+  --color-brand: oklch(0.65 0.25 260);
+  --color-brand-light: oklch(0.85 0.15 260);
+  --color-brand-dark: oklch(0.45 0.25 260);
+  --color-surface: oklch(0.98 0.005 260);
+  --color-surface-dark: oklch(0.15 0.02 260);
+  --color-text: oklch(0.20 0.02 260);
+  --color-text-muted: oklch(0.55 0.02 260);
+  --color-border: oklch(0.90 0.01 260);
+  --color-success: oklch(0.65 0.20 145);
+  --color-warning: oklch(0.75 0.15 85);
+  --color-error: oklch(0.55 0.25 25);
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-full: 9999px;
+
+  --font-heading: 'Inter Variable', sans-serif;
+  --font-body: 'Inter Variable', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', monospace;
+
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 2rem;
+  --space-xl: 4rem;
+  --space-2xl: 8rem;
+
+  --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px oklch(0 0 0 / 0.07);
+  --shadow-lg: 0 10px 25px oklch(0 0 0 / 0.1);
+
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 400ms ease;
+  --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+```
+
+Derive ALL colors from the brand hue by shifting lightness/chroma. This ensures visual consistency.
+
+---
+
+## Phase 15: Post-Launch (offer after deployment)
+
+After the project is live, offer these post-launch services:
+
+1. **A/B Testing Setup** — Vercel Toolbar or PostHog experiments. Define first 3 experiments (hero headline, CTA copy, pricing layout).
+2. **Heatmap Integration** — PostHog session replay or Hotjar. Track scroll depth, click patterns, rage clicks.
+3. **Feedback Widget** — Simple in-app feedback button (thumbs up/down + optional comment). Store in Supabase.
+4. **Uptime Monitoring** — BetterUptime or UptimeRobot. Configure status page. Alert via Slack/email.
+5. **Performance Monitoring** — Vercel Speed Insights or CrUX dashboard. Monthly CWV check.
+6. **Content Updates** — Guide for updating copy, images, blog posts. CMS integration if applicable.
+
+---
+
+## Skill Self-Test (verify before delivery)
+
+Before marking a project as complete, run through this checklist:
+
+### Build & Runtime
+- [ ] `bun install` — clean install works
+- [ ] `bun run build` — zero errors
+- [ ] `bun run dev` — starts without errors
+- [ ] `bun test` — all tests pass
+- [ ] `bun test:e2e` — E2E tests pass (if applicable)
+
+### Design Quality
+- [ ] Screenshot at 375px, 768px, 1440px — all look intentional
+- [ ] Dark mode toggle works (if applicable)
+- [ ] Lenis smooth scroll active
+- [ ] At least 1 creative layout element (not a standard grid)
+- [ ] No placeholder text (lorem ipsum, TODO, TBD)
+
+### Security & Compliance
+- [ ] No secrets in code or git history
+- [ ] RLS enabled on all Supabase tables
+- [ ] Auth flows tested (login, signup, reset, logout)
+- [ ] Cookie consent works, Consent Mode v2 fires before tags
+- [ ] Impressum + Datenschutz reachable in ≤ 2 clicks (if German market)
+
+### Performance
+- [ ] Lighthouse Performance > 90
+- [ ] Lighthouse Accessibility > 90
+- [ ] LCP < 2.5s on mobile
+- [ ] No layout shifts visible on page load
+
+### Deployment
+- [ ] Environment variables documented in `.env.example`
+- [ ] README.md has setup instructions, architecture diagram
+- [ ] CHANGELOG.md initialized with v0.1.0
+
+---
+
+## Lessons Learned Log
+
+After each project, append to a `LESSONS-LEARNED.md` in the project root:
+
+```markdown
+## Project: [Name] — [Date]
+
+### What went well
+- [e.g., Lenis + GSAP scroll integration was smooth]
+
+### What was painful
+- [e.g., Better Auth session handling with RSC needed workaround]
+
+### Patterns to reuse
+- [e.g., The Zustand + TanStack Query prefetch pattern in RSC]
+
+### Patterns to avoid
+- [e.g., Don't use barrel files with dynamic imports — breaks tree-shaking]
+```
+
+This builds institutional knowledge across projects.
+
+---
+
 ## Interaction style
 
 - Be opinionated — recommend the best approach, explain why, let the user override
 - Show your work — explain design decisions, not just code
 - Be thorough — don't skip error handling, loading states, or email templates
 - After Phase 0 confirmation: work autonomously through all phases without unnecessary interruptions
+- Use parallel agents in every phase to maximize speed
+- Output checkpoint summaries after each phase
+- Enforce quality gates — never skip build/test/lint checks
 - Update README.md after every significant change
 - Use conventional commit messages for all commits
 
@@ -343,21 +589,58 @@ API docs (OpenAPI/Swagger), component library overview (Storybook), Architecture
 
 ## Reference files
 
-Read these as needed during the relevant phases:
+Read these as needed during the relevant phases. Organized by category:
 
-- `references/design-patterns.md` — Lenis setup, OKLCH colors, noise textures, hero variants, navigation patterns, Framer Motion + GSAP recipes, anti-patterns, modern CSS techniques, Magic UI/Aceternity patterns
+### Core (Phase 0-3)
+- `references/project-concept.md` — Template for Phase 0 concept document
 - `references/copywriting-framework.md` — Research process, headline formulas, section-by-section writing guide
-- `references/security-checklist.md` — Vulnerability patterns, fix templates, auth hardening, API security, webhook verification
-- `references/testing-patterns.md` — Vitest, Playwright, MSW, API test recipes, continuous testing approach
-- `references/saas-features.md` — Admin panel, billing, roles, multi-tenancy, audit log, feature flags, status page
-- `references/accessibility.md` — WCAG 2.1 AA guide, EAA compliance, verification checklist
-- `references/seo-geo.md` — Technical SEO, GEO for AI search, JSON-LD templates
+- `references/design-patterns.md` — Lenis setup, OKLCH colors, noise textures, hero variants, navigation patterns, Framer Motion + GSAP recipes, anti-patterns, modern CSS techniques, Magic UI/Aceternity patterns
+- `references/animation-playbook.md` — Framer Motion, GSAP + Lenis, CSS-only animations, stagger patterns, page transitions, micro-interactions, reduced motion, performance rules
+- `references/component-catalog.md` — 15 mandatory components (Button, Input, Modal, DataTable, Command Palette, etc.) with API design, a11y, variants
+
+### Backend & Data
 - `references/auth-patterns.md` — Better Auth, Clerk, Supabase Auth, Passkeys, 2FA, Magic Links, RBAC
-- `references/payment.md` — Stripe Embedded Checkout, Billing Portal, webhooks, EU VAT, LemonSqueezy/Paddle
-- `references/email-system.md` — React Email + Resend, template list, SPF/DKIM/DMARC, onboarding sequences
+- `references/database-patterns.md` — Prisma vs Drizzle, schema design, seeding, connection pooling, RLS, soft delete, pagination, full-text search, migrations, indexing
+- `references/api-design-patterns.md` — tRPC vs REST, route handlers, cursor pagination, filtering, rate limiting, OpenAPI, RFC 7807 errors, Server Actions vs API routes
+- `references/state-management.md` — Zustand (slices, persist), TanStack Query (prefetch RSC, optimistic, infinite), nuqs URL state, hydration
+- `references/realtime-patterns.md` — Supabase Realtime (Postgres Changes, Broadcast, Presence), chat, live dashboard, multiplayer cursors
+- `references/caching-strategies.md` — Next.js cache layers, ISR/SSG/PPR decision tree, TanStack Query cache, Redis/Upstash, CDN, SWR pattern
+- `references/search-patterns.md` — Meilisearch vs Algolia vs PG FTS vs Typesense, autocomplete, fuzzy search, faceted search
+- `references/background-jobs.md` — Inngest vs Trigger.dev vs BullMQ vs Vercel Cron, retry strategies, job monitoring, rate limiting
+
+### Frontend & UX
+- `references/ui-state-patterns.md` — Error boundaries, skeleton screens, empty states, toasts (Sonner), offline detection, optimistic updates, loading states, 404/403/500 pages
+- `references/form-patterns.md` — React Hook Form + Zod, multi-step wizard, conditional fields, dynamic arrays, Server Actions, file upload, autosave, accessible errors
+- `references/file-upload-patterns.md` — Supabase Storage, presigned URLs, drag-and-drop, image compression, upload progress, avatar crop, bulk upload, security
+- `references/i18n-patterns.md` — next-intl setup, middleware locale detection, Server/Client components, pluralization, language switcher, SEO (hreflang), RTL
+- `references/onboarding-patterns.md` — Product tours, checklists, activation metrics, welcome wizard, sample data, progressive disclosure, email drip, measuring success
+- `references/conversion-patterns.md` — Social proof, trust signals, pricing psychology, CTA optimization, exit intent, form optimization, A/B testing
+- `references/data-visualization.md` — Recharts vs Tremor vs Chart.js, dashboard layouts, responsive charts, real-time updates, data formatting, export PNG/CSV/PDF
+- `references/media-pipeline.md` — OG images (next/og), favicon system, video embedding, SVG handling, image optimization, icons, CDN strategy
+- `references/notification-system.md` — In-app, email, push (Web Push API), SMS, preference management, batching/digests, realtime delivery
+
+### Quality & Security (Phase 4-7)
+- `references/security-checklist.md` — Vulnerability patterns, fix templates, auth hardening, API security, webhook verification
+- `references/accessibility.md` — WCAG 2.1 AA guide, EAA compliance, verification checklist
+- `references/testing-patterns.md` — Vitest, Playwright, MSW, API test recipes, continuous testing approach
+- `references/e2e-testing-recipes.md` — Playwright complete flows (auth, CRUD, forms), visual regression, a11y testing, CI integration, Page Object Model
+- `references/performance-patterns.md` — next/image, font loading, code splitting, ISR/SSG/PPR, cache headers, bundle analysis, CWV debugging, edge functions
+- `references/error-monitoring-patterns.md` — Custom error classes, Sentry setup, alerting rules, error budgets, structured logging (Pino), debug workflow
+
+### DevOps & Deployment (Phase 8-13)
 - `references/ci-cd.md` — GitHub Actions workflows, preview deploys, Docker builds, branch strategies
 - `references/git-workflow.md` — Conventional commits, changelog, README template, branch protection
-- `references/tracking-pixels.md` — Meta Pixel, GTM, CAPI, Consent Mode v2, TikTok/LinkedIn pixels
 - `references/devops.md` — Sentry, Pino logging, health checks, Docker, Redis caching, secret management
-- `references/project-concept.md` — Template for Phase 0 concept document
+- `references/webhook-patterns.md` — Receiving/sending webhooks, signature verification, idempotency, retry, dead letter queue, Stripe/GitHub handlers
+
+### Marketing & Compliance (Phase 10-14)
+- `references/tracking-pixels.md` — Meta Pixel, GTM, CAPI, Consent Mode v2, TikTok/LinkedIn pixels
+- `references/seo-geo.md` — Technical SEO, GEO for AI search, JSON-LD templates
 - `references/legal-gdpr.md` — DDG Impressum, DSGVO, EAA, EU Data Act, Consent Mode v2, data deletion
+- `references/email-system.md` — React Email + Resend, template list, SPF/DKIM/DMARC, onboarding sequences
+- `references/payment.md` — Stripe Embedded Checkout, Billing Portal, webhooks, EU VAT, LemonSqueezy/Paddle
+
+### SaaS & Advanced
+- `references/saas-features.md` — Admin panel, billing, roles, multi-tenancy, audit log, feature flags, status page
+- `references/multi-tenancy-patterns.md` — Shared DB + RLS, schema-per-tenant, tenant context middleware, tenant-aware caching, billing per tenant
+- `references/third-party-integration.md` — API client wrapper, circuit breaker, OAuth2 refresh, retry with backoff, rate limit handling, data sync patterns
