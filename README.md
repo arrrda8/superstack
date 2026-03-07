@@ -90,6 +90,7 @@ Copy `skills/superstack/` (with `SKILL.md` + `references/`) to `~/.claude/skills
 | `/superstack:audit` | Focused audit on security, accessibility, performance, or SEO |
 | `/superstack:redesign` | Redesign an existing project with premium design standards |
 | `/superstack:add` | Add a feature to an existing project (auth, payments, i18n, etc.) |
+| `/superstack:shutdown` | Clean session close: scan, clean, update docs, lessons learned, commit & push |
 
 **Examples:**
 
@@ -99,6 +100,7 @@ Copy `skills/superstack/` (with `SKILL.md` + `references/`) to `~/.claude/skills
 /superstack:audit security
 /superstack:redesign homepage
 /superstack:add stripe payments
+/superstack:shutdown feat: complete auth implementation
 ```
 
 ### Automatic Triggering
@@ -121,7 +123,8 @@ superstack/
 │   ├── review.md                       # /superstack:review — full quality review
 │   ├── audit.md                        # /superstack:audit — security/a11y/perf/SEO
 │   ├── redesign.md                     # /superstack:redesign — visual overhaul
-│   └── add.md                          # /superstack:add — add feature to project
+│   ├── add.md                          # /superstack:add — add feature to project
+│   └── shutdown.md                     # /superstack:shutdown — clean session close
 ├── skills/
 │   └── superstack/
 │       ├── SKILL.md                    # Main skill file (368 lines, optimized per Anthropic guidelines)
