@@ -1,5 +1,31 @@
 # Form Patterns Reference — React / Next.js
 
+## Table of Contents
+- [1. React Hook Form + Zod — Foundation](#1-react-hook-form-zod-foundation)
+  - [Schema Definition & Typed Form](#schema-definition-typed-form)
+  - [Custom Zod Refinements](#custom-zod-refinements)
+- [2. Multi-Step Wizard](#2-multi-step-wizard)
+  - [Persist Wizard State to localStorage](#persist-wizard-state-to-localstorage)
+- [3. Conditional Fields](#3-conditional-fields)
+  - [Simple Show/Hide with `watch()`](#simple-showhide-with-watch)
+- [4. Dynamic Field Arrays](#4-dynamic-field-arrays)
+  - [Nested Field Arrays (e.g., Teams with Members)](#nested-field-arrays-eg-teams-with-members)
+- [5. Server Actions Integration](#5-server-actions-integration)
+  - [With `useActionState` (React 19 / Next.js 15+)](#with-useactionstate-react-19-nextjs-15)
+  - [React Hook Form + Server Actions (Hybrid)](#react-hook-form-server-actions-hybrid)
+- [6. File Upload in Forms](#6-file-upload-in-forms)
+- [7. Autosave](#7-autosave)
+- [8. Address Autocomplete (Google Places)](#8-address-autocomplete-google-places)
+- [9. Accessible Form Errors](#9-accessible-form-errors)
+  - [Key ARIA Patterns Summary](#key-aria-patterns-summary)
+- [10. Complex Patterns](#10-complex-patterns)
+  - [Dependent Dropdowns](#dependent-dropdowns)
+  - [Inline Editing](#inline-editing)
+  - [Search-as-you-type Filter](#search-as-you-type-filter)
+  - [Currency & Phone Input Masks](#currency-phone-input-masks)
+  - [Zod Schemas for Currency & Phone](#zod-schemas-for-currency-phone)
+- [Quick Reference: Common Zod Patterns for Forms](#quick-reference-common-zod-patterns-for-forms)
+
 Comprehensive patterns for form handling using **React Hook Form + Zod + shadcn/ui**.
 
 ---

@@ -1,5 +1,40 @@
 # Internationalization (i18n) Patterns — Next.js + next-intl
 
+## Table of Contents
+- [1. next-intl Setup](#1-next-intl-setup)
+  - [Install](#install)
+  - [Routing Config (`src/i18n/routing.ts`)](#routing-config-srci18nroutingts)
+  - [Middleware (`src/middleware.ts`)](#middleware-srcmiddlewarets)
+  - [Request Config (`src/i18n/request.ts`)](#request-config-srci18nrequestts)
+  - [Next.js Config (`next.config.ts`)](#nextjs-config-nextconfigts)
+  - [Layout (`src/app/[locale]/layout.tsx`)](#layout-srcapplocalelayouttsx)
+- [2. Message Files](#2-message-files)
+  - [Structure (`messages/de.json`)](#structure-messagesdejson)
+  - [Corresponding English (`messages/en.json`)](#corresponding-english-messagesenjson)
+  - [Type Safety (`src/i18n/types.ts`)](#type-safety-srci18ntypests)
+- [3. Server Components](#3-server-components)
+- [4. Client Components](#4-client-components)
+  - [Rich Text / HTML in Translations](#rich-text--html-in-translations)
+  - [Selective Provider (reduce client bundle)](#selective-provider-reduce-client-bundle)
+- [5. Pluralization & Formatting](#5-pluralization--formatting)
+  - [Plural Rules (ICU)](#plural-rules-icu)
+  - [Number, Date, Currency Formatting](#number-date-currency-formatting)
+  - [Server-side Formatting](#server-side-formatting)
+- [6. Language Switcher](#6-language-switcher)
+  - [Dropdown Variant (shadcn/ui)](#dropdown-variant-shadcnui)
+- [7. SEO](#7-seo)
+  - [Localized Metadata (`src/app/[locale]/layout.tsx`)](#localized-metadata-srcapplocalelayouttsx)
+  - [Sitemap per Locale (`src/app/sitemap.ts`)](#sitemap-per-locale-srcappsitemapts)
+- [8. Translation Workflow](#8-translation-workflow)
+  - [Extract Keys Script (`scripts/check-i18n.ts`)](#extract-keys-script-scriptscheck-i18nts)
+  - [CI Check (GitHub Actions)](#ci-check-github-actions)
+  - [Platform Integration (Crowdin / Lokalise)](#platform-integration-crowdin--lokalise)
+- [9. RTL Support](#9-rtl-support)
+  - [Tailwind Config (`tailwind.config.ts`)](#tailwind-config-tailwindconfigts)
+  - [Logical CSS Properties](#logical-css-properties)
+  - [RTL-Aware Layout](#rtl-aware-layout)
+  - [Common RTL Gotchas](#common-rtl-gotchas)
+
 Production-ready patterns for multilingual Next.js App Router applications using next-intl.
 
 ---

@@ -1,5 +1,38 @@
 # DevOps Reference — Superstack
 
+## Table of Contents
+- [1. Sentry Error Monitoring Setup](#1-sentry-error-monitoring-setup)
+  - [Installation](#installation)
+  - [Client Config (sentry.client.config.ts)](#client-config-sentryclientconfigts)
+  - [Server Config (sentry.server.config.ts)](#server-config-sentryserverconfigts)
+  - [Global Error Boundary (app/global-error.tsx)](#global-error-boundary-appglobal-errortsx)
+  - [CRITICAL: Tunnel Route to Bypass Adblockers](#critical-tunnel-route-to-bypass-adblockers)
+- [2. Structured Logging with Pino](#2-structured-logging-with-pino)
+  - [Installation](#installation-1)
+  - [Logger Setup (lib/logger.ts)](#logger-setup-libloggerts)
+  - [Usage in API Routes](#usage-in-api-routes)
+  - [NEVER Log](#never-log)
+- [3. Health Check Endpoint](#3-health-check-endpoint)
+  - [Route Handler (app/api/health/route.ts)](#route-handler-appapihealthroutets)
+  - [Docker HEALTHCHECK](#docker-healthcheck)
+  - [External Monitoring](#external-monitoring)
+- [4. Docker Multi-Stage Build](#4-docker-multi-stage-build)
+  - [Dockerfile](#dockerfile)
+  - [next.config.ts (required for standalone)](#nextconfigts-required-for-standalone)
+  - [docker-compose.yml](#docker-composeyml)
+- [5. Redis Caching Patterns](#5-redis-caching-patterns)
+  - [Cache-Aside Pattern](#cache-aside-pattern)
+  - [Tag-Based Invalidation](#tag-based-invalidation)
+  - [TTL Strategies](#ttl-strategies)
+- [6. Database Migrations](#6-database-migrations)
+  - [Drizzle (Recommended for Superstack)](#drizzle-recommended-for-superstack)
+  - [Breaking Change Strategy (Multi-Step)](#breaking-change-strategy-multi-step)
+  - [CI/CD Integration](#cicd-integration)
+- [7. Secret Management](#7-secret-management)
+  - [.env.example Template](#envexample-template)
+  - [Rules](#rules)
+  - [.gitignore entries](#gitignore-entries)
+
 ## 1. Sentry Error Monitoring Setup
 
 ### Installation

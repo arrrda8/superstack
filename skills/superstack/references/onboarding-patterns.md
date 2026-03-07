@@ -1,87 +1,190 @@
-# Onboarding Patterns
+# User Onboarding Patterns for SaaS/Web Apps
 
-Reference for user onboarding: product tours, checklists, activation tracking, welcome wizards, sample data, empty states, progressive disclosure, email drips, help systems, and success measurement.
+## Table of Contents
+- [1. Product Tours](#1-product-tours)
+  - [Using react-joyride](#using-react-joyride)
+  - [Custom Tooltip Tour (no library)](#custom-tooltip-tour-no-library)
+- [2. Onboarding Checklist](#2-onboarding-checklist)
+  - [Checklist Component](#checklist-component)
+  - [Supabase Schema for Persistent State](#supabase-schema-for-persistent-state)
+  - [API Route for Progress](#api-route-for-progress)
+- [3. Activation Metrics](#3-activation-metrics)
+  - [Activation Event Tracking](#activation-event-tracking)
+  - [Time-to-Value Tracking](#time-to-value-tracking)
+  - [Drop-off Analysis Dashboard](#drop-off-analysis-dashboard)
+- [4. Welcome Wizard](#4-welcome-wizard)
+- [5. Sample Data](#5-sample-data)
+  - [Seed Function](#seed-function)
+  - [Sample Data Banner](#sample-data-banner)
+  - [Cleanup API](#cleanup-api)
+- [6. Empty State CTAs](#6-empty-state-ctas)
+- [7. Progressive Disclosure](#7-progressive-disclosure)
+- [8. Email Onboarding Drip](#8-email-onboarding-drip)
+  - [Drip Configuration and Scheduler](#drip-configuration-and-scheduler)
+  - [Cron-based Email Sender](#cron-based-email-sender)
+- [9. Help System](#9-help-system)
+  - [Contextual Tooltip](#contextual-tooltip)
+  - [Slide-in Help Panel](#slide-in-help-panel)
+  - [Chat Widget Integration](#chat-widget-integration)
+- [10. Measuring Success](#10-measuring-success)
+  - [Analytics Dashboard Component](#analytics-dashboard-component)
+  - [A/B Testing Assignment](#ab-testing-assignment)
+  - [Metrics API Route](#metrics-api-route)
+  - [Supabase RPC Functions for Metrics](#supabase-rpc-functions-for-metrics)
+- [Quick Reference: Key Decisions](#quick-reference-key-decisions)
+
+Reference for implementing user onboarding flows with React/Next.js, Supabase, and related tooling.
 
 ---
 
 ## 1. Product Tours
 
-Step-by-step tooltips highlighting UI elements. Can use react-joyride or a custom implementation.
+Step-by-step tooltips that guide users through key features on first visit.
+
+### Using react-joyride
 
 ```tsx
-// components/onboarding/product-tour.tsx
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import Joyride, { CallBackProps, STATUS, Step } from "react-joyride";
+import { useState, useEffect } from "react";
+
+const tourSteps: Step[] = [
+  {
+    target: "#dashboard-header",
+    content: "Welcome! This is your dashboard where you can see all key metrics.",
+    placement: "bottom",
+    disableBeacon: true,
+  },
+  {
+    target: "#create-campaign-btn",
+    content: "Click here to create your first campaign.",
+    placement: "right",
+    spotlightClicks: true,
+  },
+  {
+    target: "#analytics-panel",
+    content: "Track performance in real-time from this panel.",
+    placement: "left",
+  },
+];
+
+export function ProductTour() {
+  const [run, setRun] = useState(false);
+
+  useEffect(() => {
+    const hasSeenTour = localStorage.getItem("tour_completed");
+    if (!hasSeenTour) setRun(true);
+  }, []);
+
+  function handleCallback(data: CallBackProps) {
+    const { status } = data;
+    if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
+      setRun(false);
+      localStorage.setItem("tour_completed", "true");
+      // Persist to backend
+      fetch("/api/onboarding/tour", { method: "POST" });
+    }
+  }
+
+  return (
+    <Joyride
+      steps={tourSteps}
+      run={run}
+      continuous
+      showSkipButton
+      showProgress
+      callback={handleCallback}
+      styles={{
+        options: {
+          primaryColor: "#6366f1",
+          zIndex: 10000,
+        },
+        tooltipContent: {
+          fontSize: 14,
+        },
+      }}
+      locale={{
+        back: "Back",
+        close: "Close",
+        last: "Done",
+        next: "Next",
+        skip: "Skip tour",
+      }}
+    />
+  );
+}
+```
+
+### Custom Tooltip Tour (no library)
+
+```tsx
+"use client";
+
+import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 
 interface TourStep {
-  target: string;       // CSS selector
+  targetSelector: string;
   title: string;
   content: string;
-  placement?: "top" | "bottom" | "left" | "right";
-  action?: "click" | "input" | "none";
-  onEnter?: () => void; // Run when step activates
+  placement: "top" | "bottom" | "left" | "right";
 }
 
-interface ProductTourProps {
-  steps: TourStep[];
-  tourId: string;
-  onComplete: () => void;
-  onSkip: () => void;
-}
+const steps: TourStep[] = [
+  {
+    targetSelector: "#sidebar-nav",
+    title: "Navigation",
+    content: "Use the sidebar to switch between sections.",
+    placement: "right",
+  },
+  {
+    targetSelector: "#data-table",
+    title: "Your Data",
+    content: "All your records appear here. Click any row to edit.",
+    placement: "bottom",
+  },
+];
 
-export function ProductTour({ steps, tourId, onComplete, onSkip }: ProductTourProps) {
+export function CustomTour({ onComplete }: { onComplete: () => void }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
 
-  const step = steps[currentStep];
-
-  const updatePosition = useCallback(() => {
-    if (!step) return;
-    const element = document.querySelector(step.target);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth", block: "center" });
-      setTargetRect(element.getBoundingClientRect());
-    }
-  }, [step]);
-
   useEffect(() => {
-    updatePosition();
-    window.addEventListener("resize", updatePosition);
-    step?.onEnter?.();
-    return () => window.removeEventListener("resize", updatePosition);
-  }, [currentStep, updatePosition, step]);
+    const el = document.querySelector(steps[currentStep].targetSelector);
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setTargetRect(rect);
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [currentStep]);
 
-  const next = () => {
+  function next() {
     if (currentStep < steps.length - 1) {
-      setCurrentStep((prev) => prev + 1);
+      setCurrentStep((s) => s + 1);
     } else {
       onComplete();
     }
-  };
-
-  const prev = () => {
-    if (currentStep > 0) setCurrentStep((prev) => prev - 1);
-  };
+  }
 
   if (!targetRect) return null;
+
+  const step = steps[currentStep];
 
   return createPortal(
     <>
       {/* Overlay with spotlight cutout */}
       <div className="fixed inset-0 z-[9998]">
-        <svg className="absolute inset-0 h-full w-full">
+        <svg className="h-full w-full">
           <defs>
-            <mask id="spotlight-mask">
+            <mask id="spotlight">
               <rect width="100%" height="100%" fill="white" />
               <rect
                 x={targetRect.left - 8}
                 y={targetRect.top - 8}
                 width={targetRect.width + 16}
                 height={targetRect.height + 16}
-                rx="8"
+                rx={8}
                 fill="black"
               />
             </mask>
@@ -90,7 +193,7 @@ export function ProductTour({ steps, tourId, onComplete, onSkip }: ProductTourPr
             width="100%"
             height="100%"
             fill="rgba(0,0,0,0.5)"
-            mask="url(#spotlight-mask)"
+            mask="url(#spotlight)"
           />
         </svg>
       </div>
@@ -102,57 +205,32 @@ export function ProductTour({ steps, tourId, onComplete, onSkip }: ProductTourPr
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
-          className="fixed z-[9999] w-80 rounded-xl bg-white p-5 shadow-2xl dark:bg-zinc-900"
+          className="fixed z-[9999] w-72 rounded-lg bg-white p-4 shadow-xl"
           style={{
-            top: targetRect.bottom + 16,
-            left: targetRect.left + targetRect.width / 2 - 160,
+            top: targetRect.bottom + 12,
+            left: targetRect.left,
           }}
         >
-          <div className="mb-1 text-xs font-medium text-zinc-400">
-            Step {currentStep + 1} of {steps.length}
-          </div>
-          <h3 className="mb-2 text-base font-semibold text-zinc-900 dark:text-white">
-            {step.title}
-          </h3>
-          <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-300">
-            {step.content}
-          </p>
-
-          <div className="flex items-center justify-between">
-            <button
-              onClick={onSkip}
-              className="text-xs text-zinc-400 hover:text-zinc-600"
-            >
-              Skip tour
-            </button>
+          <p className="text-sm font-semibold text-gray-900">{step.title}</p>
+          <p className="mt-1 text-sm text-gray-600">{step.content}</p>
+          <div className="mt-3 flex items-center justify-between">
+            <span className="text-xs text-gray-400">
+              {currentStep + 1} / {steps.length}
+            </span>
             <div className="flex gap-2">
-              {currentStep > 0 && (
-                <button
-                  onClick={prev}
-                  className="rounded-lg px-3 py-1.5 text-sm text-zinc-600 hover:bg-zinc-100"
-                >
-                  Back
-                </button>
-              )}
+              <button
+                onClick={onComplete}
+                className="text-xs text-gray-400 hover:text-gray-600"
+              >
+                Skip
+              </button>
               <button
                 onClick={next}
-                className="rounded-lg bg-zinc-900 px-3 py-1.5 text-sm text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-900"
+                className="rounded bg-indigo-600 px-3 py-1 text-xs text-white hover:bg-indigo-700"
               >
-                {currentStep === steps.length - 1 ? "Done" : "Next"}
+                {currentStep < steps.length - 1 ? "Next" : "Done"}
               </button>
             </div>
-          </div>
-
-          {/* Progress dots */}
-          <div className="mt-3 flex justify-center gap-1">
-            {steps.map((_, i) => (
-              <div
-                key={i}
-                className={`h-1.5 w-1.5 rounded-full transition-colors ${
-                  i === currentStep ? "bg-zinc-900 dark:bg-white" : "bg-zinc-200 dark:bg-zinc-700"
-                }`}
-              />
-            ))}
           </div>
         </motion.div>
       </AnimatePresence>
@@ -160,43 +238,17 @@ export function ProductTour({ steps, tourId, onComplete, onSkip }: ProductTourPr
     document.body
   );
 }
-
-// --- Usage ---
-const DASHBOARD_TOUR_STEPS: TourStep[] = [
-  {
-    target: '[data-tour="sidebar-nav"]',
-    title: "Navigation",
-    content: "Use the sidebar to navigate between sections of your dashboard.",
-  },
-  {
-    target: '[data-tour="create-project"]',
-    title: "Create your first project",
-    content: "Click here to create a new project and start tracking your work.",
-  },
-  {
-    target: '[data-tour="settings"]',
-    title: "Settings",
-    content: "Customize your workspace, invite team members, and manage billing.",
-  },
-];
-
-// In your page component:
-// <ProductTour
-//   steps={DASHBOARD_TOUR_STEPS}
-//   tourId="dashboard-v1"
-//   onComplete={() => markTourComplete("dashboard-v1")}
-//   onSkip={() => markTourSkipped("dashboard-v1")}
-// />
 ```
 
 ---
 
 ## 2. Onboarding Checklist
 
-Progress checklist component with persistent state and reward on completion.
+A persistent progress checklist that guides users through setup tasks.
+
+### Checklist Component
 
 ```tsx
-// components/onboarding/checklist.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -207,171 +259,242 @@ interface ChecklistItem {
   id: string;
   title: string;
   description: string;
-  href?: string;
-  action?: () => void;
-  isComplete: boolean;
+  action: () => void;
+  actionLabel: string;
 }
 
-interface OnboardingChecklistProps {
-  items: ChecklistItem[];
-  onItemComplete: (itemId: string) => void;
-  onAllComplete: () => void;
-}
+const checklistItems: ChecklistItem[] = [
+  {
+    id: "profile",
+    title: "Complete your profile",
+    description: "Add your name and company details.",
+    action: () => (window.location.href = "/settings/profile"),
+    actionLabel: "Go to profile",
+  },
+  {
+    id: "first_project",
+    title: "Create your first project",
+    description: "Set up a project to start tracking data.",
+    action: () => (window.location.href = "/projects/new"),
+    actionLabel: "Create project",
+  },
+  {
+    id: "invite_team",
+    title: "Invite a team member",
+    description: "Collaborate by inviting your team.",
+    action: () => (window.location.href = "/settings/team"),
+    actionLabel: "Invite team",
+  },
+  {
+    id: "connect_source",
+    title: "Connect a data source",
+    description: "Link your marketing platforms.",
+    action: () => (window.location.href = "/integrations"),
+    actionLabel: "Connect",
+  },
+];
 
-export function OnboardingChecklist({
-  items,
-  onItemComplete,
-  onAllComplete,
-}: OnboardingChecklistProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
+export function OnboardingChecklist() {
+  const [completed, setCompleted] = useState<Set<string>>(new Set());
+  const [expanded, setExpanded] = useState(true);
   const [showReward, setShowReward] = useState(false);
 
-  const completedCount = items.filter((i) => i.isComplete).length;
-  const progress = (completedCount / items.length) * 100;
-  const allComplete = completedCount === items.length;
+  useEffect(() => {
+    // Load progress from backend
+    fetch("/api/onboarding/progress")
+      .then((r) => r.json())
+      .then((data) => setCompleted(new Set(data.completedSteps)));
+  }, []);
+
+  const progress = (completed.size / checklistItems.length) * 100;
+  const allDone = completed.size === checklistItems.length;
 
   useEffect(() => {
-    if (allComplete) {
+    if (allDone) {
       setShowReward(true);
-      onAllComplete();
+      fetch("/api/onboarding/complete", { method: "POST" });
     }
-  }, [allComplete, onAllComplete]);
+  }, [allDone]);
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="w-80 rounded-lg border border-gray-200 bg-white shadow-sm">
       {/* Header */}
       <button
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={() => setExpanded(!expanded)}
         className="flex w-full items-center justify-between p-4"
       >
-        <div className="flex items-center gap-3">
-          <div className="text-sm font-semibold text-zinc-900 dark:text-white">
-            Getting started
-          </div>
-          <span className="text-xs text-zinc-400">
-            {completedCount}/{items.length} complete
-          </span>
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900">
+            Getting Started
+          </h3>
+          <p className="text-xs text-gray-500">
+            {completed.size} of {checklistItems.length} complete
+          </p>
         </div>
         <ChevronDown
-          className={`h-4 w-4 text-zinc-400 transition-transform ${
-            isExpanded ? "rotate-180" : ""
+          className={`h-4 w-4 text-gray-400 transition-transform ${
+            expanded ? "rotate-180" : ""
           }`}
         />
       </button>
 
       {/* Progress bar */}
-      <div className="mx-4 h-1.5 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+      <div className="mx-4 mb-2 h-1.5 overflow-hidden rounded-full bg-gray-100">
         <motion.div
-          className="h-full rounded-full bg-emerald-500"
+          className="h-full rounded-full bg-indigo-600"
           initial={{ width: 0 }}
           animate={{ width: `${progress}%` }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
+          transition={{ duration: 0.5 }}
         />
       </div>
 
       {/* Items */}
       <AnimatePresence>
-        {isExpanded && (
+        {expanded && (
           <motion.div
             initial={{ height: 0 }}
             animate={{ height: "auto" }}
             exit={{ height: 0 }}
             className="overflow-hidden"
           >
-            <div className="space-y-1 p-2 pt-3">
-              {items.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    if (!item.isComplete) {
-                      item.action?.();
-                      onItemComplete(item.id);
-                    }
-                  }}
-                  className={`flex w-full items-start gap-3 rounded-lg p-3 text-left transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800 ${
-                    item.isComplete ? "opacity-60" : ""
-                  }`}
-                >
-                  {item.isComplete ? (
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-500" />
-                  ) : (
-                    <Circle className="mt-0.5 h-5 w-5 shrink-0 text-zinc-300" />
-                  )}
-                  <div>
-                    <div
-                      className={`text-sm font-medium ${
-                        item.isComplete
-                          ? "text-zinc-400 line-through"
-                          : "text-zinc-900 dark:text-white"
-                      }`}
-                    >
-                      {item.title}
+            <div className="space-y-1 p-2">
+              {checklistItems.map((item) => {
+                const isDone = completed.has(item.id);
+                return (
+                  <div
+                    key={item.id}
+                    className={`rounded-md p-3 ${
+                      isDone ? "opacity-60" : "hover:bg-gray-50"
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      {isDone ? (
+                        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-500" />
+                      ) : (
+                        <Circle className="mt-0.5 h-5 w-5 shrink-0 text-gray-300" />
+                      )}
+                      <div className="flex-1">
+                        <p
+                          className={`text-sm font-medium ${
+                            isDone
+                              ? "text-gray-400 line-through"
+                              : "text-gray-900"
+                          }`}
+                        >
+                          {item.title}
+                        </p>
+                        {!isDone && (
+                          <>
+                            <p className="mt-0.5 text-xs text-gray-500">
+                              {item.description}
+                            </p>
+                            <button
+                              onClick={item.action}
+                              className="mt-2 text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                            >
+                              {item.actionLabel} &rarr;
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-xs text-zinc-400">{item.description}</div>
                   </div>
-                </button>
-              ))}
+                );
+              })}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Reward modal */}
+      {/* Completion reward */}
       <AnimatePresence>
         {showReward && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="m-4 rounded-lg bg-gradient-to-r from-emerald-50 to-teal-50 p-4 dark:from-emerald-950/30 dark:to-teal-950/30"
+            className="m-4 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 p-4 text-center text-white"
           >
-            <div className="flex items-center gap-3">
-              <Gift className="h-6 w-6 text-emerald-500" />
-              <div>
-                <div className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
-                  Setup complete!
-                </div>
-                <div className="text-xs text-emerald-600 dark:text-emerald-400">
-                  You have unlocked all features. Happy building!
-                </div>
-              </div>
-            </div>
+            <Gift className="mx-auto h-8 w-8" />
+            <p className="mt-2 text-sm font-semibold">Setup Complete!</p>
+            <p className="mt-1 text-xs opacity-90">
+              You've unlocked 30 extra days on your trial.
+            </p>
           </motion.div>
         )}
       </AnimatePresence>
     </div>
   );
 }
+```
 
-// --- Persistent state hook ---
-// hooks/use-onboarding-checklist.ts
-import { useEffect, useState, useCallback } from "react";
+### Supabase Schema for Persistent State
 
-export function useOnboardingChecklist(userId: string) {
-  const [completedItems, setCompletedItems] = useState<Set<string>>(new Set());
+```sql
+create table onboarding_progress (
+  user_id uuid references auth.users primary key,
+  completed_steps text[] default '{}',
+  checklist_dismissed boolean default false,
+  completed_at timestamptz,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
 
-  useEffect(() => {
-    // Load from DB or localStorage
-    async function load() {
-      const res = await fetch(`/api/onboarding/checklist?userId=${userId}`);
-      const data = await res.json();
-      setCompletedItems(new Set(data.completed));
-    }
-    load();
-  }, [userId]);
+alter table onboarding_progress enable row level security;
 
-  const markComplete = useCallback(
-    async (itemId: string) => {
-      setCompletedItems((prev) => new Set([...prev, itemId]));
-      await fetch("/api/onboarding/checklist", {
-        method: "POST",
-        body: JSON.stringify({ userId, itemId }),
-      });
-    },
-    [userId]
-  );
+create policy "Users manage own onboarding"
+  on onboarding_progress for all
+  using (auth.uid() = user_id);
+```
 
-  return { completedItems, markComplete };
+### API Route for Progress
+
+```tsx
+// app/api/onboarding/progress/route.ts
+import { createClient } from "@/lib/supabase/server";
+import { NextResponse } from "next/server";
+
+export async function GET() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { data } = await supabase
+    .from("onboarding_progress")
+    .select("completed_steps")
+    .eq("user_id", user.id)
+    .single();
+
+  return NextResponse.json({ completedSteps: data?.completed_steps ?? [] });
+}
+
+export async function POST(req: Request) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { stepId } = await req.json();
+
+  const { data: current } = await supabase
+    .from("onboarding_progress")
+    .select("completed_steps")
+    .eq("user_id", user.id)
+    .single();
+
+  const steps = new Set(current?.completed_steps ?? []);
+  steps.add(stepId);
+
+  await supabase.from("onboarding_progress").upsert({
+    user_id: user.id,
+    completed_steps: Array.from(steps),
+    updated_at: new Date().toISOString(),
+    ...(steps.size === 4 ? { completed_at: new Date().toISOString() } : {}),
+  });
+
+  return NextResponse.json({ ok: true });
 }
 ```
 
@@ -379,104 +502,160 @@ export function useOnboardingChecklist(userId: string) {
 
 ## 3. Activation Metrics
 
-Define activation events, track time-to-value, and identify drop-off points.
+Define what "activated" means, track time-to-value, and identify drop-off points.
+
+### Activation Event Tracking
 
 ```tsx
 // lib/activation.ts
 
-// --- Define activation events ---
-interface ActivationMilestone {
-  id: string;
-  name: string;
-  description: string;
-  isRequired: boolean;
-  weight: number; // 0-1, importance for activation score
-}
-
-const ACTIVATION_MILESTONES: ActivationMilestone[] = [
-  { id: "signup_complete", name: "Signed up", description: "Account created", isRequired: true, weight: 0.1 },
-  { id: "profile_setup", name: "Profile set up", description: "Name and avatar added", isRequired: false, weight: 0.1 },
-  { id: "first_project", name: "First project created", description: "Created their first project", isRequired: true, weight: 0.3 },
-  { id: "invite_team", name: "Team member invited", description: "Invited at least one team member", isRequired: false, weight: 0.2 },
-  { id: "first_integration", name: "Integration connected", description: "Connected a third-party service", isRequired: true, weight: 0.3 },
-];
-
-// --- Track activation events ---
-// lib/activation-tracker.ts
-interface ActivationEvent {
+export interface ActivationEvent {
+  event: string;
   userId: string;
-  milestoneId: string;
-  timestamp: Date;
+  timestamp: string;
   metadata?: Record<string, unknown>;
 }
 
-async function trackActivation(event: ActivationEvent) {
-  // Store event
-  await db.activationEvent.upsert({
-    where: {
-      userId_milestoneId: { userId: event.userId, milestoneId: event.milestoneId },
-    },
-    create: {
-      userId: event.userId,
-      milestoneId: event.milestoneId,
-      completedAt: event.timestamp,
-      metadata: event.metadata ?? {},
-    },
-    update: {}, // Don't overwrite if already completed
+const ACTIVATION_MILESTONES = [
+  "signed_up",
+  "completed_profile",
+  "created_first_project",
+  "connected_data_source",
+  "viewed_first_report",
+] as const;
+
+type Milestone = (typeof ACTIVATION_MILESTONES)[number];
+
+export async function trackActivation(
+  userId: string,
+  milestone: Milestone,
+  metadata?: Record<string, unknown>
+) {
+  const event: ActivationEvent = {
+    event: milestone,
+    userId,
+    timestamp: new Date().toISOString(),
+    metadata,
+  };
+
+  // Store in Supabase
+  const { createClient } = await import("@/lib/supabase/server");
+  const supabase = await createClient();
+
+  await supabase.from("activation_events").insert({
+    user_id: userId,
+    event_name: milestone,
+    metadata,
   });
 
-  // Check if user is now "activated"
-  const completed = await db.activationEvent.findMany({
-    where: { userId: event.userId },
+  // Also send to analytics (Posthog, Mixpanel, etc.)
+  await fetch(process.env.ANALYTICS_WEBHOOK_URL!, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(event),
   });
+}
+```
 
-  const completedIds = new Set(completed.map((e) => e.milestoneId));
-  const requiredMilestones = ACTIVATION_MILESTONES.filter((m) => m.isRequired);
-  const isActivated = requiredMilestones.every((m) => completedIds.has(m.id));
+### Time-to-Value Tracking
 
-  if (isActivated) {
-    await db.user.update({
-      where: { id: event.userId },
-      data: { activatedAt: new Date() },
-    });
+```tsx
+// lib/time-to-value.ts
 
-    // Track time-to-value
-    const user = await db.user.findUnique({ where: { id: event.userId } });
-    const timeToValue = event.timestamp.getTime() - user!.createdAt.getTime();
-    console.log(`User ${event.userId} activated in ${timeToValue / 1000 / 60} minutes`);
+export async function calculateTimeToValue(userId: string) {
+  const { createClient } = await import("@/lib/supabase/server");
+  const supabase = await createClient();
+
+  const { data: events } = await supabase
+    .from("activation_events")
+    .select("event_name, created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: true });
+
+  if (!events?.length) return null;
+
+  const signedUp = events.find((e) => e.event_name === "signed_up");
+  const firstValue = events.find((e) => e.event_name === "viewed_first_report");
+
+  if (!signedUp || !firstValue) return null;
+
+  const ttv =
+    new Date(firstValue.created_at).getTime() -
+    new Date(signedUp.created_at).getTime();
+
+  return {
+    userId,
+    timeToValueMs: ttv,
+    timeToValueHours: ttv / (1000 * 60 * 60),
+    milestonesReached: events.map((e) => e.event_name),
+    dropOffPoint: getDropOffPoint(events.map((e) => e.event_name)),
+  };
+}
+
+function getDropOffPoint(reached: string[]): string | null {
+  const funnel = [
+    "signed_up",
+    "completed_profile",
+    "created_first_project",
+    "connected_data_source",
+    "viewed_first_report",
+  ];
+
+  for (let i = 0; i < funnel.length; i++) {
+    if (!reached.includes(funnel[i])) return funnel[i];
   }
+  return null; // Fully activated
+}
+```
+
+### Drop-off Analysis Dashboard
+
+```tsx
+"use client";
+
+import { useEffect, useState } from "react";
+
+interface FunnelStep {
+  name: string;
+  count: number;
+  percentage: number;
 }
 
-// --- Activation score calculation ---
-function calculateActivationScore(
-  completedMilestoneIds: string[],
-  milestones: ActivationMilestone[] = ACTIVATION_MILESTONES
-): number {
-  const completedSet = new Set(completedMilestoneIds);
-  return milestones.reduce((score, milestone) => {
-    return score + (completedSet.has(milestone.id) ? milestone.weight : 0);
-  }, 0);
-}
+export function ActivationFunnel() {
+  const [funnel, setFunnel] = useState<FunnelStep[]>([]);
 
-// --- Drop-off analysis query ---
-// app/api/admin/activation-funnel/route.ts
-export async function GET() {
-  const totalUsers = await db.user.count();
+  useEffect(() => {
+    fetch("/api/admin/activation-funnel")
+      .then((r) => r.json())
+      .then(setFunnel);
+  }, []);
 
-  const funnel = await Promise.all(
-    ACTIVATION_MILESTONES.map(async (milestone) => {
-      const count = await db.activationEvent.count({
-        where: { milestoneId: milestone.id },
-      });
-      return {
-        milestone: milestone.name,
-        count,
-        percentage: ((count / totalUsers) * 100).toFixed(1),
-      };
-    })
+  return (
+    <div className="space-y-3">
+      <h3 className="text-lg font-semibold">Activation Funnel</h3>
+      {funnel.map((step, i) => (
+        <div key={step.name} className="space-y-1">
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-700">{step.name}</span>
+            <span className="text-gray-500">
+              {step.count} ({step.percentage}%)
+            </span>
+          </div>
+          <div className="h-3 overflow-hidden rounded-full bg-gray-100">
+            <div
+              className="h-full rounded-full bg-indigo-500 transition-all"
+              style={{ width: `${step.percentage}%` }}
+            />
+          </div>
+          {i < funnel.length - 1 && (
+            <p className="text-xs text-red-500">
+              Drop-off: {(funnel[i].percentage - funnel[i + 1].percentage).toFixed(1)}%
+            </p>
+          )}
+        </div>
+      ))}
+    </div>
   );
-
-  return Response.json({ totalUsers, funnel });
 }
 ```
 
@@ -487,7 +666,6 @@ export async function GET() {
 Multi-step setup flow with personalization questions, skip option, and progress indicator.
 
 ```tsx
-// components/onboarding/welcome-wizard.tsx
 "use client";
 
 import { useState } from "react";
@@ -498,169 +676,152 @@ interface WizardStep {
   id: string;
   title: string;
   subtitle: string;
-  component: React.ComponentType<{
-    data: Record<string, unknown>;
-    onUpdate: (data: Record<string, unknown>) => void;
-  }>;
-  isSkippable: boolean;
 }
 
-const WIZARD_STEPS: WizardStep[] = [
-  {
-    id: "role",
-    title: "What is your role?",
-    subtitle: "This helps us customize your experience.",
-    component: RoleStep,
-    isSkippable: false,
-  },
-  {
-    id: "team_size",
-    title: "How big is your team?",
-    subtitle: "We will set up your workspace accordingly.",
-    component: TeamSizeStep,
-    isSkippable: true,
-  },
-  {
-    id: "use_case",
-    title: "What will you use this for?",
-    subtitle: "Select all that apply.",
-    component: UseCaseStep,
-    isSkippable: true,
-  },
-  {
-    id: "integrations",
-    title: "Connect your tools",
-    subtitle: "Import your data from existing services.",
-    component: IntegrationsStep,
-    isSkippable: true,
-  },
+const wizardSteps: WizardStep[] = [
+  { id: "role", title: "What's your role?", subtitle: "We'll customize your experience." },
+  { id: "company", title: "Tell us about your company", subtitle: "Help us set things up." },
+  { id: "goals", title: "What are your goals?", subtitle: "We'll suggest the right features." },
+  { id: "integrations", title: "Connect your tools", subtitle: "Import your existing data." },
 ];
 
 export function WelcomeWizard() {
   const router = useRouter();
-  const [currentStep, setCurrentStep] = useState(0);
-  const [wizardData, setWizardData] = useState<Record<string, unknown>>({});
+  const [step, setStep] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, unknown>>({});
 
-  const step = WIZARD_STEPS[currentStep];
-  const StepComponent = step.component;
-  const isLastStep = currentStep === WIZARD_STEPS.length - 1;
+  function updateAnswer(key: string, value: unknown) {
+    setAnswers((prev) => ({ ...prev, [key]: value }));
+  }
 
-  const handleNext = async () => {
-    if (isLastStep) {
-      // Save all wizard data
-      await fetch("/api/onboarding/wizard", {
-        method: "POST",
-        body: JSON.stringify(wizardData),
-      });
-      router.push("/dashboard");
-    } else {
-      setCurrentStep((prev) => prev + 1);
-    }
-  };
-
-  const handleSkip = () => {
-    if (isLastStep) {
-      handleNext();
-    } else {
-      setCurrentStep((prev) => prev + 1);
-    }
-  };
-
-  const handleSkipAll = async () => {
+  async function handleComplete() {
     await fetch("/api/onboarding/wizard", {
       method: "POST",
-      body: JSON.stringify({ ...wizardData, skipped: true }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(answers),
     });
     router.push("/dashboard");
-  };
+  }
+
+  function handleSkip() {
+    fetch("/api/onboarding/wizard", {
+      method: "POST",
+      body: JSON.stringify({ ...answers, skippedAtStep: step }),
+    });
+    router.push("/dashboard");
+  }
+
+  const currentStep = wizardSteps[step];
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <div className="w-full max-w-lg">
-        {/* Progress bar */}
-        <div className="mb-8 flex items-center gap-2">
-          {WIZARD_STEPS.map((_, i) => (
+        {/* Progress indicator */}
+        <div className="mb-8 flex gap-2">
+          {wizardSteps.map((_, i) => (
             <div
               key={i}
               className={`h-1 flex-1 rounded-full transition-colors ${
-                i <= currentStep
-                  ? "bg-zinc-900 dark:bg-white"
-                  : "bg-zinc-200 dark:bg-zinc-800"
+                i <= step ? "bg-indigo-600" : "bg-gray-200"
               }`}
             />
           ))}
         </div>
 
-        {/* Step content */}
         <AnimatePresence mode="wait">
           <motion.div
-            key={step.id}
+            key={step}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.2 }}
+            className="rounded-xl bg-white p-8 shadow-sm"
           >
-            <h1 className="mb-2 text-2xl font-bold text-zinc-900 dark:text-white">
-              {step.title}
-            </h1>
-            <p className="mb-8 text-zinc-500">{step.subtitle}</p>
+            <h2 className="text-xl font-bold text-gray-900">
+              {currentStep.title}
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              {currentStep.subtitle}
+            </p>
 
-            <StepComponent
-              data={wizardData}
-              onUpdate={(update) =>
-                setWizardData((prev) => ({ ...prev, ...update }))
-              }
-            />
-          </motion.div>
-        </AnimatePresence>
+            <div className="mt-6">
+              {currentStep.id === "role" && (
+                <RoleSelector
+                  value={answers.role as string}
+                  onChange={(v) => updateAnswer("role", v)}
+                />
+              )}
+              {currentStep.id === "company" && (
+                <CompanyForm
+                  value={answers.company as Record<string, string>}
+                  onChange={(v) => updateAnswer("company", v)}
+                />
+              )}
+              {currentStep.id === "goals" && (
+                <GoalsPicker
+                  value={answers.goals as string[]}
+                  onChange={(v) => updateAnswer("goals", v)}
+                />
+              )}
+              {currentStep.id === "integrations" && (
+                <IntegrationConnector
+                  connected={answers.integrations as string[]}
+                  onChange={(v) => updateAnswer("integrations", v)}
+                />
+              )}
+            </div>
 
-        {/* Actions */}
-        <div className="mt-8 flex items-center justify-between">
-          <div className="flex gap-3">
-            {step.isSkippable && (
+            {/* Navigation */}
+            <div className="mt-8 flex items-center justify-between">
               <button
                 onClick={handleSkip}
-                className="text-sm text-zinc-400 hover:text-zinc-600"
+                className="text-sm text-gray-400 hover:text-gray-600"
               >
-                Skip this step
+                Skip setup
               </button>
-            )}
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={handleSkipAll}
-              className="rounded-lg px-4 py-2 text-sm text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-            >
-              Skip setup
-            </button>
-            <button
-              onClick={handleNext}
-              className="rounded-lg bg-zinc-900 px-6 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
-            >
-              {isLastStep ? "Get started" : "Continue"}
-            </button>
-          </div>
-        </div>
+              <div className="flex gap-3">
+                {step > 0 && (
+                  <button
+                    onClick={() => setStep((s) => s - 1)}
+                    className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    Back
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    if (step < wizardSteps.length - 1) {
+                      setStep((s) => s + 1);
+                    } else {
+                      handleComplete();
+                    }
+                  }}
+                  className="rounded-lg bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-700"
+                >
+                  {step < wizardSteps.length - 1 ? "Continue" : "Get Started"}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );
 }
 
-// --- Example step component ---
-function RoleStep({
-  data,
-  onUpdate,
+// --- Sub-components ---
+
+function RoleSelector({
+  value,
+  onChange,
 }: {
-  data: Record<string, unknown>;
-  onUpdate: (data: Record<string, unknown>) => void;
+  value?: string;
+  onChange: (v: string) => void;
 }) {
   const roles = [
-    { id: "founder", label: "Founder / CEO", icon: "rocket" },
-    { id: "developer", label: "Developer", icon: "code" },
-    { id: "designer", label: "Designer", icon: "palette" },
-    { id: "marketer", label: "Marketer", icon: "megaphone" },
-    { id: "pm", label: "Product Manager", icon: "clipboard" },
-    { id: "other", label: "Other", icon: "user" },
+    { id: "founder", label: "Founder / CEO" },
+    { id: "marketer", label: "Marketing Manager" },
+    { id: "developer", label: "Developer" },
+    { id: "agency", label: "Agency" },
   ];
 
   return (
@@ -668,49 +829,145 @@ function RoleStep({
       {roles.map((role) => (
         <button
           key={role.id}
-          onClick={() => onUpdate({ role: role.id })}
-          className={`rounded-xl border-2 p-4 text-left transition-colors ${
-            data.role === role.id
-              ? "border-zinc-900 bg-zinc-50 dark:border-white dark:bg-zinc-800"
-              : "border-zinc-200 hover:border-zinc-300 dark:border-zinc-700"
+          onClick={() => onChange(role.id)}
+          className={`rounded-lg border-2 p-4 text-left transition-colors ${
+            value === role.id
+              ? "border-indigo-600 bg-indigo-50"
+              : "border-gray-200 hover:border-gray-300"
           }`}
         >
-          <div className="text-sm font-medium text-zinc-900 dark:text-white">
-            {role.label}
-          </div>
+          <p className="text-sm font-medium text-gray-900">{role.label}</p>
         </button>
       ))}
     </div>
   );
 }
 
-function TeamSizeStep({ data, onUpdate }: { data: Record<string, unknown>; onUpdate: (d: Record<string, unknown>) => void }) {
-  const sizes = ["Just me", "2-5", "6-20", "21-50", "50+"];
+function CompanyForm({
+  value,
+  onChange,
+}: {
+  value?: Record<string, string>;
+  onChange: (v: Record<string, string>) => void;
+}) {
+  const data = value ?? { name: "", size: "", industry: "" };
+
   return (
-    <div className="flex flex-col gap-2">
-      {sizes.map((size) => (
-        <button
-          key={size}
-          onClick={() => onUpdate({ teamSize: size })}
-          className={`rounded-lg border-2 p-3 text-left text-sm transition-colors ${
-            data.teamSize === size
-              ? "border-zinc-900 dark:border-white"
-              : "border-zinc-200 dark:border-zinc-700"
-          }`}
+    <div className="space-y-4">
+      <input
+        type="text"
+        placeholder="Company name"
+        value={data.name}
+        onChange={(e) => onChange({ ...data, name: e.target.value })}
+        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+      />
+      <select
+        value={data.size}
+        onChange={(e) => onChange({ ...data, size: e.target.value })}
+        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+      >
+        <option value="">Company size</option>
+        <option value="1-10">1-10</option>
+        <option value="11-50">11-50</option>
+        <option value="51-200">51-200</option>
+        <option value="200+">200+</option>
+      </select>
+      <select
+        value={data.industry}
+        onChange={(e) => onChange({ ...data, industry: e.target.value })}
+        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+      >
+        <option value="">Industry</option>
+        <option value="saas">SaaS</option>
+        <option value="ecommerce">E-Commerce</option>
+        <option value="agency">Agency</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+  );
+}
+
+function GoalsPicker({
+  value,
+  onChange,
+}: {
+  value?: string[];
+  onChange: (v: string[]) => void;
+}) {
+  const goals = [
+    "Track marketing KPIs",
+    "Automate reporting",
+    "Reduce manual data work",
+    "Improve ROI visibility",
+    "Collaborate with team",
+  ];
+  const selected = value ?? [];
+
+  function toggle(goal: string) {
+    onChange(
+      selected.includes(goal)
+        ? selected.filter((g) => g !== goal)
+        : [...selected, goal]
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {goals.map((goal) => (
+        <label
+          key={goal}
+          className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 p-3 hover:bg-gray-50"
         >
-          {size}
-        </button>
+          <input
+            type="checkbox"
+            checked={selected.includes(goal)}
+            onChange={() => toggle(goal)}
+            className="h-4 w-4 rounded border-gray-300 text-indigo-600"
+          />
+          <span className="text-sm text-gray-700">{goal}</span>
+        </label>
       ))}
     </div>
   );
 }
 
-function UseCaseStep({ data, onUpdate }: { data: Record<string, unknown>; onUpdate: (d: Record<string, unknown>) => void }) {
-  return <div>Use case selection UI</div>;
-}
+function IntegrationConnector({
+  connected,
+  onChange,
+}: {
+  connected?: string[];
+  onChange: (v: string[]) => void;
+}) {
+  const integrations = [
+    { id: "google_ads", name: "Google Ads" },
+    { id: "meta_ads", name: "Meta Ads" },
+    { id: "google_analytics", name: "Google Analytics" },
+  ];
+  const list = connected ?? [];
 
-function IntegrationsStep({ data, onUpdate }: { data: Record<string, unknown>; onUpdate: (d: Record<string, unknown>) => void }) {
-  return <div>Integration connection UI</div>;
+  return (
+    <div className="space-y-3">
+      {integrations.map((int) => (
+        <div
+          key={int.id}
+          className="flex items-center justify-between rounded-lg border border-gray-200 p-3"
+        >
+          <span className="text-sm font-medium text-gray-900">{int.name}</span>
+          {list.includes(int.id) ? (
+            <span className="text-xs font-medium text-green-600">Connected</span>
+          ) : (
+            <button
+              onClick={() => onChange([...list, int.id])}
+              className="rounded-md bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200"
+            >
+              Connect
+            </button>
+          )}
+        </div>
+      ))}
+      <p className="text-xs text-gray-400">You can add more integrations later.</p>
+    </div>
+  );
 }
 ```
 
@@ -718,130 +975,189 @@ function IntegrationsStep({ data, onUpdate }: { data: Record<string, unknown>; o
 
 ## 5. Sample Data
 
-Seed demo data for new users with an "explore with sample data" option and cleanup.
+Seed demo data for new users so they see a populated interface immediately.
+
+### Seed Function
 
 ```tsx
-// lib/onboarding/sample-data.ts
-import "server-only";
+// lib/seed-sample-data.ts
 
-interface SampleDataConfig {
-  userId: string;
-  templates: SampleTemplate[];
-}
+import { SupabaseClient } from "@supabase/supabase-js";
 
-interface SampleTemplate {
-  type: string;
-  data: Record<string, unknown>[];
-}
-
-const SAMPLE_DATA_TEMPLATES: SampleTemplate[] = [
+const SAMPLE_CAMPAIGNS = [
   {
-    type: "project",
-    data: [
-      {
-        name: "Marketing Website Redesign",
-        description: "A sample project to explore project management features.",
-        status: "in_progress",
-        tasks: [
-          { title: "Design homepage mockup", status: "done" },
-          { title: "Build component library", status: "in_progress" },
-          { title: "Write copy for About page", status: "todo" },
-          { title: "Set up analytics", status: "todo" },
-        ],
-      },
-    ],
+    name: "Summer Sale 2025",
+    platform: "meta_ads",
+    spend: 1250.0,
+    impressions: 145000,
+    clicks: 3200,
+    conversions: 85,
+    status: "active",
+    is_sample: true,
   },
   {
-    type: "contact",
-    data: [
-      { name: "Alex Johnson", email: "alex@example.com", company: "Acme Corp" },
-      { name: "Sarah Chen", email: "sarah@example.com", company: "TechStart Inc" },
-    ],
+    name: "Brand Awareness Q3",
+    platform: "google_ads",
+    spend: 890.0,
+    impressions: 230000,
+    clicks: 4100,
+    conversions: 42,
+    status: "active",
+    is_sample: true,
+  },
+  {
+    name: "Retargeting - Cart Abandoners",
+    platform: "meta_ads",
+    spend: 340.0,
+    impressions: 45000,
+    clicks: 1800,
+    conversions: 63,
+    status: "paused",
+    is_sample: true,
   },
 ];
 
-async function seedSampleData(userId: string): Promise<string[]> {
-  const createdIds: string[] = [];
+export async function seedSampleData(
+  supabase: SupabaseClient,
+  userId: string
+) {
+  // Check if already seeded
+  const { count } = await supabase
+    .from("campaigns")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("is_sample", true);
 
-  for (const template of SAMPLE_DATA_TEMPLATES) {
-    for (const item of template.data) {
-      const record = await db[template.type].create({
-        data: {
-          ...item,
-          userId,
-          isSampleData: true, // Flag for cleanup
-          createdAt: new Date(),
-        },
-      });
-      createdIds.push(record.id);
-    }
-  }
+  if (count && count > 0) return;
 
-  // Mark user as having sample data
-  await db.user.update({
-    where: { id: userId },
-    data: { hasSampleData: true },
-  });
+  // Insert sample campaigns
+  const campaigns = SAMPLE_CAMPAIGNS.map((c) => ({
+    ...c,
+    user_id: userId,
+    created_at: new Date().toISOString(),
+  }));
 
-  return createdIds;
+  await supabase.from("campaigns").insert(campaigns);
+
+  // Insert sample daily metrics for the last 30 days
+  const { data: inserted } = await supabase
+    .from("campaigns")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("is_sample", true);
+
+  if (!inserted) return;
+
+  const metrics = inserted.flatMap((campaign) =>
+    Array.from({ length: 30 }, (_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      return {
+        campaign_id: campaign.id,
+        date: date.toISOString().split("T")[0],
+        spend: Math.round(Math.random() * 100 + 20),
+        impressions: Math.round(Math.random() * 8000 + 2000),
+        clicks: Math.round(Math.random() * 200 + 50),
+        conversions: Math.round(Math.random() * 10 + 1),
+        is_sample: true,
+      };
+    })
+  );
+
+  await supabase.from("campaign_metrics").insert(metrics);
 }
+```
 
-async function cleanupSampleData(userId: string): Promise<number> {
-  // Delete all sample data for user across all tables
-  const tables = ["project", "task", "contact"];
-  let totalDeleted = 0;
+### Sample Data Banner
 
-  for (const table of tables) {
-    const result = await db[table].deleteMany({
-      where: { userId, isSampleData: true },
-    });
-    totalDeleted += result.count;
-  }
-
-  await db.user.update({
-    where: { id: userId },
-    data: { hasSampleData: false },
-  });
-
-  return totalDeleted;
-}
-
-// --- API routes ---
-// app/api/onboarding/sample-data/route.ts
-export async function POST(request: Request) {
-  const { userId } = await request.json();
-  const ids = await seedSampleData(userId);
-  return Response.json({ created: ids.length, ids });
-}
-
-export async function DELETE(request: Request) {
-  const { userId } = await request.json();
-  const deleted = await cleanupSampleData(userId);
-  return Response.json({ deleted });
-}
-
-// --- Component ---
-// components/onboarding/sample-data-banner.tsx
+```tsx
 "use client";
 
-export function SampleDataBanner({ onCleanup }: { onCleanup: () => void }) {
+import { useState } from "react";
+import { Info, X } from "lucide-react";
+
+export function SampleDataBanner({
+  onCleanup,
+}: {
+  onCleanup: () => Promise<void>;
+}) {
+  const [visible, setVisible] = useState(true);
+  const [cleaning, setCleaning] = useState(false);
+
+  if (!visible) return null;
+
+  async function handleCleanup() {
+    setCleaning(true);
+    await onCleanup();
+    setVisible(false);
+  }
+
   return (
-    <div className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-950/30">
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-amber-800 dark:text-amber-200">
-          You are viewing sample data.
-        </span>
+    <div className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+      <div className="flex items-center gap-3">
+        <Info className="h-4 w-4 text-amber-600" />
+        <p className="text-sm text-amber-800">
+          You're viewing <strong>sample data</strong>. Connect your own data
+          source or{" "}
+          <button
+            onClick={handleCleanup}
+            disabled={cleaning}
+            className="font-medium underline hover:no-underline"
+          >
+            {cleaning ? "Removing..." : "remove sample data"}
+          </button>
+          .
+        </p>
       </div>
-      <div className="flex gap-2">
-        <button
-          onClick={onCleanup}
-          className="rounded-md bg-amber-200 px-3 py-1 text-xs font-medium text-amber-900 hover:bg-amber-300"
-        >
-          Remove sample data
-        </button>
-      </div>
+      <button
+        onClick={() => setVisible(false)}
+        className="text-amber-400 hover:text-amber-600"
+      >
+        <X className="h-4 w-4" />
+      </button>
     </div>
   );
+}
+```
+
+### Cleanup API
+
+```tsx
+// app/api/onboarding/cleanup-sample-data/route.ts
+import { createClient } from "@/lib/supabase/server";
+import { NextResponse } from "next/server";
+
+export async function POST() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Delete sample metrics first (FK constraint)
+  await supabase
+    .from("campaign_metrics")
+    .delete()
+    .eq("is_sample", true)
+    .in(
+      "campaign_id",
+      (
+        await supabase
+          .from("campaigns")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("is_sample", true)
+      ).data?.map((c) => c.id) ?? []
+    );
+
+  // Delete sample campaigns
+  await supabase
+    .from("campaigns")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("is_sample", true);
+
+  return NextResponse.json({ ok: true });
 }
 ```
 
@@ -849,126 +1165,151 @@ export function SampleDataBanner({ onCleanup }: { onCleanup: () => void }) {
 
 ## 6. Empty State CTAs
 
-Guide users from empty dashboards to their first action with inline tutorials.
+Guide users from an empty dashboard to their first meaningful action.
 
 ```tsx
-// components/empty-states/empty-state.tsx
-import { LucideIcon } from "lucide-react";
+import { Plus, Upload, BookOpen, PlayCircle } from "lucide-react";
 
 interface EmptyStateProps {
-  icon: LucideIcon;
   title: string;
   description: string;
-  action: {
-    label: string;
-    onClick: () => void;
-  };
-  secondaryAction?: {
-    label: string;
-    onClick: () => void;
-  };
-  illustration?: React.ReactNode;
+  icon?: React.ReactNode;
+  primaryAction: { label: string; onClick: () => void };
+  secondaryAction?: { label: string; onClick: () => void };
+  showTutorial?: boolean;
 }
 
 export function EmptyState({
-  icon: Icon,
   title,
   description,
-  action,
+  icon,
+  primaryAction,
   secondaryAction,
-  illustration,
+  showTutorial,
 }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
-      {illustration ?? (
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-100 dark:bg-zinc-800">
-          <Icon className="h-8 w-8 text-zinc-400" />
+    <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-16">
+      {icon && (
+        <div className="mb-4 rounded-full bg-indigo-50 p-4 text-indigo-600">
+          {icon}
         </div>
       )}
-
-      <h3 className="mb-2 text-lg font-semibold text-zinc-900 dark:text-white">
-        {title}
-      </h3>
-      <p className="mb-6 max-w-sm text-sm text-zinc-500">
+      <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+      <p className="mt-1 max-w-sm text-center text-sm text-gray-500">
         {description}
       </p>
 
-      <div className="flex items-center gap-3">
+      <div className="mt-6 flex gap-3">
         <button
-          onClick={action.onClick}
-          className="rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-900"
+          onClick={primaryAction.onClick}
+          className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
         >
-          {action.label}
+          <Plus className="h-4 w-4" />
+          {primaryAction.label}
         </button>
         {secondaryAction && (
           <button
             onClick={secondaryAction.onClick}
-            className="rounded-lg border border-zinc-200 px-5 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400"
+            className="flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
+            <Upload className="h-4 w-4" />
             {secondaryAction.label}
           </button>
         )}
       </div>
+
+      {showTutorial && (
+        <div className="mt-8 flex gap-4">
+          <button className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700">
+            <PlayCircle className="h-4 w-4" />
+            Watch tutorial (2 min)
+          </button>
+          <button className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700">
+            <BookOpen className="h-4 w-4" />
+            Read the docs
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
-// --- Contextual empty states per section ---
-// components/empty-states/projects-empty.tsx
-import { FolderPlus, PlayCircle } from "lucide-react";
+// --- Usage ---
 
-export function ProjectsEmpty({
-  onCreateProject,
-  onLoadSampleData,
-}: {
-  onCreateProject: () => void;
-  onLoadSampleData: () => void;
-}) {
-  return (
-    <EmptyState
-      icon={FolderPlus}
-      title="No projects yet"
-      description="Create your first project to start organizing your work. Or explore with sample data to see what is possible."
-      action={{ label: "Create project", onClick: onCreateProject }}
-      secondaryAction={{ label: "Try with sample data", onClick: onLoadSampleData }}
-    />
-  );
+export function CampaignsDashboard({ campaigns }: { campaigns: unknown[] }) {
+  if (campaigns.length === 0) {
+    return (
+      <EmptyState
+        icon={<Plus className="h-8 w-8" />}
+        title="No campaigns yet"
+        description="Create your first campaign to start tracking performance across your marketing channels."
+        primaryAction={{
+          label: "Create Campaign",
+          onClick: () => (window.location.href = "/campaigns/new"),
+        }}
+        secondaryAction={{
+          label: "Import from CSV",
+          onClick: () => (window.location.href = "/campaigns/import"),
+        }}
+        showTutorial
+      />
+    );
+  }
+
+  return <div>{/* Render campaign list */}</div>;
 }
 
-// --- Inline tutorial empty state ---
-export function InlineTutorialEmpty({
-  onStart,
-}: {
-  onStart: () => void;
-}) {
-  const steps = [
-    "Create a project",
-    "Add your first task",
-    "Invite a team member",
-  ];
-
+// Inline tutorial empty state with step-by-step guidance
+export function InlineTutorialEmptyState() {
   return (
-    <div className="flex flex-col items-center py-16">
-      <PlayCircle className="mb-4 h-12 w-12 text-zinc-300" />
-      <h3 className="mb-6 text-lg font-semibold">Get started in 3 steps</h3>
-
-      <ol className="mb-8 space-y-3 text-left">
-        {steps.map((step, i) => (
-          <li key={i} className="flex items-center gap-3 text-sm text-zinc-600">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-100 text-xs font-medium">
-              {i + 1}
-            </span>
-            {step}
-          </li>
+    <div className="rounded-xl border border-gray-200 bg-white p-8">
+      <h3 className="text-lg font-semibold text-gray-900">
+        Get started in 3 steps
+      </h3>
+      <div className="mt-6 space-y-4">
+        {[
+          {
+            step: 1,
+            title: "Connect your ad platform",
+            description: "Link Google Ads or Meta Ads.",
+            action: "Connect",
+            href: "/integrations",
+          },
+          {
+            step: 2,
+            title: "Create a dashboard",
+            description: "Choose metrics and build your view.",
+            action: "Create",
+            href: "/dashboards/new",
+          },
+          {
+            step: 3,
+            title: "Share with your team",
+            description: "Invite colleagues to collaborate.",
+            action: "Invite",
+            href: "/settings/team",
+          },
+        ].map((item) => (
+          <div
+            key={item.step}
+            className="flex items-center gap-4 rounded-lg border border-gray-100 p-4"
+          >
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-600">
+              {item.step}
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-gray-900">{item.title}</p>
+              <p className="text-xs text-gray-500">{item.description}</p>
+            </div>
+            <a
+              href={item.href}
+              className="rounded-md bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-600 hover:bg-indigo-100"
+            >
+              {item.action}
+            </a>
+          </div>
         ))}
-      </ol>
-
-      <button
-        onClick={onStart}
-        className="rounded-lg bg-zinc-900 px-6 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-900"
-      >
-        Start now
-      </button>
+      </div>
     </div>
   );
 }
@@ -978,131 +1319,222 @@ export function InlineTutorialEmpty({
 
 ## 7. Progressive Disclosure
 
-Show features gradually, unlock advanced features after basics, and provide feature hints.
+Show features gradually as users become more experienced. Unlock advanced features over time.
 
 ```tsx
-// lib/progressive-disclosure.ts
-
-// --- Feature levels ---
-type FeatureLevel = "beginner" | "intermediate" | "advanced";
-
-interface Feature {
-  id: string;
-  name: string;
-  level: FeatureLevel;
-  unlockedBy?: string[]; // Feature IDs that must be used first
-  description: string;
-}
-
-const FEATURES: Feature[] = [
-  { id: "basic_editor", name: "Text Editor", level: "beginner", description: "Create and edit documents" },
-  { id: "templates", name: "Templates", level: "beginner", description: "Start from pre-built templates" },
-  { id: "collaboration", name: "Real-time Collaboration", level: "intermediate", unlockedBy: ["basic_editor"], description: "Work together in real-time" },
-  { id: "automations", name: "Automations", level: "intermediate", unlockedBy: ["basic_editor", "templates"], description: "Automate repetitive tasks" },
-  { id: "api_access", name: "API Access", level: "advanced", unlockedBy: ["automations"], description: "Programmatic access to your data" },
-  { id: "custom_webhooks", name: "Custom Webhooks", level: "advanced", unlockedBy: ["automations", "api_access"], description: "Send events to external services" },
-];
-
-async function getUnlockedFeatures(userId: string): Promise<Feature[]> {
-  const usedFeatures = await db.featureUsage.findMany({
-    where: { userId },
-    select: { featureId: true },
-  });
-
-  const usedSet = new Set(usedFeatures.map((f) => f.featureId));
-
-  return FEATURES.filter((feature) => {
-    if (!feature.unlockedBy || feature.unlockedBy.length === 0) return true;
-    return feature.unlockedBy.every((dep) => usedSet.has(dep));
-  });
-}
-
-async function trackFeatureUsage(userId: string, featureId: string) {
-  await db.featureUsage.upsert({
-    where: { userId_featureId: { userId, featureId } },
-    create: { userId, featureId, firstUsedAt: new Date(), useCount: 1 },
-    update: { useCount: { increment: 1 }, lastUsedAt: new Date() },
-  });
-}
-
-// --- Component: Feature gate ---
-// components/onboarding/feature-gate.tsx
 "use client";
 
-import { Lock } from "lucide-react";
+import { useState, createContext, useContext, useEffect } from "react";
+import { Lock, Sparkles } from "lucide-react";
 
-interface FeatureGateProps {
-  featureId: string;
-  isUnlocked: boolean;
-  requiredFeatures: string[];
-  children: React.ReactNode;
+// --- Feature gating system ---
+
+type FeatureTier = "beginner" | "intermediate" | "advanced";
+
+interface FeatureGate {
+  id: string;
+  tier: FeatureTier;
+  requiredActions: string[];
+  label: string;
 }
 
-export function FeatureGate({
-  featureId,
-  isUnlocked,
-  requiredFeatures,
-  children,
-}: FeatureGateProps) {
-  if (isUnlocked) return <>{children}</>;
+const FEATURE_GATES: FeatureGate[] = [
+  {
+    id: "custom_reports",
+    tier: "intermediate",
+    requiredActions: ["created_first_project", "viewed_first_report"],
+    label: "Custom Reports",
+  },
+  {
+    id: "api_access",
+    tier: "advanced",
+    requiredActions: [
+      "created_first_project",
+      "connected_data_source",
+      "created_custom_report",
+    ],
+    label: "API Access",
+  },
+  {
+    id: "automations",
+    tier: "advanced",
+    requiredActions: [
+      "created_first_project",
+      "connected_data_source",
+      "invited_team_member",
+    ],
+    label: "Automations",
+  },
+];
+
+interface DisclosureContextType {
+  completedActions: Set<string>;
+  isFeatureUnlocked: (featureId: string) => boolean;
+  getUnlockProgress: (featureId: string) => { done: number; total: number };
+}
+
+const DisclosureContext = createContext<DisclosureContextType | null>(null);
+
+export function DisclosureProvider({ children }: { children: React.ReactNode }) {
+  const [completedActions, setCompletedActions] = useState<Set<string>>(
+    new Set()
+  );
+
+  useEffect(() => {
+    fetch("/api/onboarding/actions")
+      .then((r) => r.json())
+      .then((data) => setCompletedActions(new Set(data.actions)));
+  }, []);
+
+  function isFeatureUnlocked(featureId: string) {
+    const gate = FEATURE_GATES.find((g) => g.id === featureId);
+    if (!gate) return true;
+    return gate.requiredActions.every((a) => completedActions.has(a));
+  }
+
+  function getUnlockProgress(featureId: string) {
+    const gate = FEATURE_GATES.find((g) => g.id === featureId);
+    if (!gate) return { done: 1, total: 1 };
+    const done = gate.requiredActions.filter((a) =>
+      completedActions.has(a)
+    ).length;
+    return { done, total: gate.requiredActions.length };
+  }
 
   return (
-    <div className="relative">
-      <div className="pointer-events-none opacity-40 blur-[2px]">{children}</div>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="rounded-xl bg-white/90 p-6 text-center shadow-lg backdrop-blur dark:bg-zinc-900/90">
-          <Lock className="mx-auto mb-3 h-8 w-8 text-zinc-400" />
-          <p className="mb-1 text-sm font-medium text-zinc-900 dark:text-white">
-            Feature locked
-          </p>
-          <p className="text-xs text-zinc-500">
-            Complete {requiredFeatures.join(" and ")} to unlock this feature.
+    <DisclosureContext.Provider
+      value={{ completedActions, isFeatureUnlocked, getUnlockProgress }}
+    >
+      {children}
+    </DisclosureContext.Provider>
+  );
+}
+
+export function useDisclosure() {
+  const ctx = useContext(DisclosureContext);
+  if (!ctx) throw new Error("useDisclosure must be inside DisclosureProvider");
+  return ctx;
+}
+
+// --- Gated feature wrapper ---
+
+export function GatedFeature({
+  featureId,
+  children,
+  fallback,
+}: {
+  featureId: string;
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+}) {
+  const { isFeatureUnlocked, getUnlockProgress } = useDisclosure();
+  const unlocked = isFeatureUnlocked(featureId);
+  const progress = getUnlockProgress(featureId);
+
+  if (unlocked) return <>{children}</>;
+
+  if (fallback) return <>{fallback}</>;
+
+  return (
+    <div className="relative rounded-lg border border-gray-200 bg-gray-50 p-4">
+      <div className="flex items-center gap-3">
+        <Lock className="h-5 w-5 text-gray-400" />
+        <div>
+          <p className="text-sm font-medium text-gray-700">Feature locked</p>
+          <p className="text-xs text-gray-500">
+            Complete {progress.total - progress.done} more action
+            {progress.total - progress.done > 1 ? "s" : ""} to unlock.
           </p>
         </div>
+      </div>
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-gray-200">
+        <div
+          className="h-full rounded-full bg-indigo-500"
+          style={{ width: `${(progress.done / progress.total) * 100}%` }}
+        />
       </div>
     </div>
   );
 }
 
 // --- Feature hint tooltip ---
-// components/onboarding/feature-hint.tsx
-"use client";
 
-import { useState } from "react";
-import { Sparkles, X } from "lucide-react";
-
-interface FeatureHintProps {
-  featureId: string;
-  title: string;
-  description: string;
+export function FeatureHint({
+  children,
+  hint,
+  showOnce = true,
+}: {
   children: React.ReactNode;
-}
+  hint: string;
+  showOnce?: boolean;
+}) {
+  const [visible, setVisible] = useState(false);
+  const storageKey = `hint_seen_${hint.slice(0, 20)}`;
 
-export function FeatureHint({ featureId, title, description, children }: FeatureHintProps) {
-  const [isDismissed, setIsDismissed] = useState(false);
+  useEffect(() => {
+    if (showOnce && localStorage.getItem(storageKey)) return;
+    const timer = setTimeout(() => setVisible(true), 1000);
+    return () => clearTimeout(timer);
+  }, [showOnce, storageKey]);
+
+  function dismiss() {
+    setVisible(false);
+    if (showOnce) localStorage.setItem(storageKey, "true");
+  }
 
   return (
     <div className="relative">
       {children}
-      {!isDismissed && (
-        <div className="absolute -top-2 right-0 z-10 translate-y-[-100%]">
-          <div className="flex items-start gap-2 rounded-lg bg-indigo-600 p-3 text-white shadow-lg">
-            <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
-            <div>
-              <div className="text-xs font-semibold">{title}</div>
-              <div className="text-xs opacity-80">{description}</div>
-            </div>
-            <button onClick={() => {
-              setIsDismissed(true);
-              localStorage.setItem(`hint-dismissed-${featureId}`, "true");
-            }}>
-              <X className="h-3 w-3" />
-            </button>
+      {visible && (
+        <div className="absolute -top-2 left-full z-50 ml-2 w-56 rounded-lg border border-indigo-200 bg-indigo-50 p-3 shadow-sm">
+          <div className="flex items-start gap-2">
+            <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" />
+            <p className="text-xs text-indigo-700">{hint}</p>
           </div>
-          <div className="ml-4 h-2 w-2 rotate-45 bg-indigo-600" />
+          <button
+            onClick={dismiss}
+            className="mt-2 text-xs font-medium text-indigo-600 hover:text-indigo-700"
+          >
+            Got it
+          </button>
         </div>
       )}
     </div>
+  );
+}
+
+// --- Usage ---
+
+export function DashboardSidebar() {
+  return (
+    <nav className="space-y-1">
+      <a href="/dashboard" className="block rounded-md px-3 py-2 text-sm">
+        Dashboard
+      </a>
+      <a href="/campaigns" className="block rounded-md px-3 py-2 text-sm">
+        Campaigns
+      </a>
+
+      <GatedFeature featureId="custom_reports">
+        <FeatureHint hint="Build custom reports by dragging metrics. Try it!">
+          <a href="/reports" className="block rounded-md px-3 py-2 text-sm">
+            Custom Reports
+          </a>
+        </FeatureHint>
+      </GatedFeature>
+
+      <GatedFeature featureId="api_access">
+        <a href="/api-keys" className="block rounded-md px-3 py-2 text-sm">
+          API Access
+        </a>
+      </GatedFeature>
+
+      <GatedFeature featureId="automations">
+        <a href="/automations" className="block rounded-md px-3 py-2 text-sm">
+          Automations
+        </a>
+      </GatedFeature>
+    </nav>
   );
 }
 ```
@@ -1111,182 +1543,172 @@ export function FeatureHint({ featureId, title, description, children }: Feature
 
 ## 8. Email Onboarding Drip
 
-Day 0/1/3/7/14 email sequence with tips, feature highlights, and re-engagement.
+Structured email sequence for the first 14 days after signup.
+
+### Drip Configuration and Scheduler
 
 ```tsx
-// lib/onboarding/email-drip.ts
-import "server-only";
+// lib/email-drip.ts
 
 interface DripEmail {
-  id: string;
-  day: number;          // Days after signup
+  day: number;
+  templateId: string;
   subject: string;
-  template: string;     // React Email template name
-  condition?: (user: UserProfile) => boolean; // Only send if true
+  purpose: string;
+  condition?: (userState: UserOnboardingState) => boolean;
 }
 
-const ONBOARDING_DRIP: DripEmail[] = [
+interface UserOnboardingState {
+  signedUpAt: string;
+  completedSteps: string[];
+  lastActiveAt: string;
+  emailsSent: string[];
+}
+
+export const DRIP_SEQUENCE: DripEmail[] = [
   {
-    id: "welcome",
     day: 0,
-    subject: "Welcome to {appName} - here is how to get started",
-    template: "welcome",
+    templateId: "welcome",
+    subject: "Welcome to {{appName}} -- here's how to get started",
+    purpose: "Welcome, set expectations, link to first action",
   },
   {
-    id: "day1_quickstart",
     day: 1,
-    subject: "Create your first project in 2 minutes",
-    template: "quickstart",
-    condition: (user) => !user.hasCreatedProject,
+    templateId: "quick_win",
+    subject: "Your first report is 2 minutes away",
+    purpose: "Drive first value moment",
+    condition: (state) => !state.completedSteps.includes("viewed_first_report"),
   },
   {
-    id: "day3_features",
     day: 3,
-    subject: "3 features you should try this week",
-    template: "feature-highlights",
+    templateId: "feature_highlight",
+    subject: "Did you know you can connect Google Ads?",
+    purpose: "Highlight key integration",
+    condition: (state) => !state.completedSteps.includes("connected_data_source"),
   },
   {
-    id: "day7_checkin",
+    day: 5,
+    templateId: "social_proof",
+    subject: "How {{companyName}} increased ROAS by 40%",
+    purpose: "Case study / social proof",
+  },
+  {
     day: 7,
-    subject: "How is it going? Here are some tips",
-    template: "checkin",
-    condition: (user) => !user.isActivated,
+    templateId: "checklist_reminder",
+    subject: "You're 60% done with setup -- finish it today",
+    purpose: "Nudge to complete onboarding checklist",
+    condition: (state) => state.completedSteps.length < 4,
   },
   {
-    id: "day14_reengage",
+    day: 10,
+    templateId: "advanced_feature",
+    subject: "Unlock automations: save 5 hours/week",
+    purpose: "Introduce advanced feature",
+    condition: (state) => state.completedSteps.length >= 3,
+  },
+  {
     day: 14,
-    subject: "We miss you - here is what is new",
-    template: "re-engagement",
-    condition: (user) => !user.isActivated && !user.wasActiveLastWeek,
+    templateId: "re_engage_or_celebrate",
+    subject: "Your 2-week milestone -- here's what you've achieved",
+    purpose: "Re-engagement or celebration based on activity",
   },
 ];
 
-// --- Cron job to send drip emails ---
-// app/api/cron/onboarding-drip/route.ts
-import { Resend } from "resend";
-import { WelcomeEmail } from "@/emails/welcome";
-import { QuickstartEmail } from "@/emails/quickstart";
+export function getNextDripEmail(
+  state: UserOnboardingState
+): DripEmail | null {
+  const daysSinceSignup = Math.floor(
+    (Date.now() - new Date(state.signedUpAt).getTime()) / (1000 * 60 * 60 * 24)
+  );
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-const EMAIL_TEMPLATES: Record<string, React.ComponentType<{ user: UserProfile }>> = {
-  welcome: WelcomeEmail,
-  quickstart: QuickstartEmail,
-  // ... more templates
-};
-
-export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  for (const email of DRIP_SEQUENCE) {
+    if (email.day > daysSinceSignup) continue;
+    if (state.emailsSent.includes(email.templateId)) continue;
+    if (email.condition && !email.condition(state)) continue;
+    return email;
   }
 
-  const results = { sent: 0, skipped: 0, errors: 0 };
+  return null;
+}
+```
 
-  for (const dripEmail of ONBOARDING_DRIP) {
-    // Find users who signed up exactly N days ago
-    const targetDate = new Date();
-    targetDate.setDate(targetDate.getDate() - dripEmail.day);
-    const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
-    const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
+### Cron-based Email Sender
 
-    const users = await db.user.findMany({
-      where: {
-        createdAt: { gte: startOfDay, lte: endOfDay },
-        emailOptOut: false,
+```tsx
+// app/api/cron/drip-emails/route.ts
+import { createClient } from "@supabase/supabase-js";
+import { getNextDripEmail } from "@/lib/email-drip";
+import { NextResponse } from "next/server";
+
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+export async function GET(req: Request) {
+  // Verify cron secret
+  const authHeader = req.headers.get("authorization");
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Get all users who signed up in the last 14 days
+  const fourteenDaysAgo = new Date();
+  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+  const { data: users } = await supabase
+    .from("onboarding_progress")
+    .select("user_id, completed_steps, created_at, emails_sent")
+    .gte("created_at", fourteenDaysAgo.toISOString());
+
+  if (!users) return NextResponse.json({ sent: 0 });
+
+  let sentCount = 0;
+
+  for (const user of users) {
+    const state = {
+      signedUpAt: user.created_at,
+      completedSteps: user.completed_steps ?? [],
+      lastActiveAt: user.created_at,
+      emailsSent: user.emails_sent ?? [],
+    };
+
+    const nextEmail = getNextDripEmail(state);
+    if (!nextEmail) continue;
+
+    // Get user email
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.admin.getUserById(user.user_id);
+    if (!authUser?.email) continue;
+
+    // Send via email provider (Resend, Postmark, etc.)
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify({
+        from: "onboarding@yourapp.com",
+        to: authUser.email,
+        subject: nextEmail.subject,
+        html: `<p>Email template: ${nextEmail.templateId}</p>`,
+      }),
     });
 
-    for (const user of users) {
-      // Check if already sent
-      const alreadySent = await db.dripEmailLog.findUnique({
-        where: { userId_emailId: { userId: user.id, emailId: dripEmail.id } },
-      });
-      if (alreadySent) {
-        results.skipped++;
-        continue;
-      }
+    // Record sent email
+    await supabase
+      .from("onboarding_progress")
+      .update({
+        emails_sent: [...(user.emails_sent ?? []), nextEmail.templateId],
+      })
+      .eq("user_id", user.user_id);
 
-      // Check condition
-      if (dripEmail.condition && !dripEmail.condition(user as UserProfile)) {
-        results.skipped++;
-        continue;
-      }
-
-      try {
-        const Template = EMAIL_TEMPLATES[dripEmail.template];
-        await resend.emails.send({
-          from: "App <hello@yourdomain.com>",
-          to: user.email,
-          subject: dripEmail.subject.replace("{appName}", "YourApp"),
-          react: Template({ user: user as UserProfile }),
-        });
-
-        await db.dripEmailLog.create({
-          data: { userId: user.id, emailId: dripEmail.id, sentAt: new Date() },
-        });
-
-        results.sent++;
-      } catch (error) {
-        console.error(`Failed to send ${dripEmail.id} to ${user.email}:`, error);
-        results.errors++;
-      }
-    }
+    sentCount++;
   }
 
-  return Response.json(results);
-}
-
-// --- React Email template example ---
-// emails/welcome.tsx
-import { Html, Head, Body, Container, Heading, Text, Button, Hr } from "@react-email/components";
-
-interface WelcomeEmailProps {
-  user: { name: string; email: string };
-}
-
-export function WelcomeEmail({ user }: WelcomeEmailProps) {
-  return (
-    <Html>
-      <Head />
-      <Body style={{ fontFamily: "system-ui, sans-serif", backgroundColor: "#fafafa" }}>
-        <Container style={{ maxWidth: "480px", margin: "0 auto", padding: "40px 20px" }}>
-          <Heading style={{ fontSize: "24px", fontWeight: 600, color: "#18181b" }}>
-            Welcome, {user.name}!
-          </Heading>
-          <Text style={{ color: "#52525b", lineHeight: 1.6 }}>
-            Thank you for signing up. Here is how to get the most out of your account:
-          </Text>
-
-          <div style={{ margin: "24px 0", padding: "16px", backgroundColor: "#fff", borderRadius: "8px", border: "1px solid #e4e4e7" }}>
-            <Text style={{ fontWeight: 600, marginBottom: "8px" }}>Quick start:</Text>
-            <Text>1. Create your first project</Text>
-            <Text>2. Invite your team</Text>
-            <Text>3. Connect your tools</Text>
-          </div>
-
-          <Button
-            href={`${process.env.NEXT_PUBLIC_APP_URL}/dashboard`}
-            style={{
-              backgroundColor: "#18181b",
-              color: "#fff",
-              padding: "12px 24px",
-              borderRadius: "8px",
-              textDecoration: "none",
-              fontWeight: 500,
-            }}
-          >
-            Go to Dashboard
-          </Button>
-
-          <Hr style={{ margin: "32px 0", borderColor: "#e4e4e7" }} />
-          <Text style={{ fontSize: "12px", color: "#a1a1aa" }}>
-            Questions? Reply to this email or visit our help center.
-          </Text>
-        </Container>
-      </Body>
-    </Html>
-  );
+  return NextResponse.json({ sent: sentCount });
 }
 ```
 
@@ -1294,64 +1716,63 @@ export function WelcomeEmail({ user }: WelcomeEmailProps) {
 
 ## 9. Help System
 
-Contextual help tooltips, help center link, and chat widget integration.
+Contextual tooltips, help center integration, and chat widget.
+
+### Contextual Tooltip
 
 ```tsx
-// components/help/contextual-help.tsx
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { HelpCircle, ExternalLink, MessageCircle, X } from "lucide-react";
+import { useState } from "react";
+import { HelpCircle, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
-interface HelpTooltipProps {
-  title: string;
-  content: string;
+export function ContextualHelp({
+  children,
+  helpText,
+  learnMoreUrl,
+}: {
+  children: React.ReactNode;
+  helpText: string;
   learnMoreUrl?: string;
-}
-
-export function HelpTooltip({ title, content, learnMoreUrl }: HelpTooltipProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+}) {
+  const [open, setOpen] = useState(false);
 
   return (
-    <div className="relative inline-block" ref={ref}>
+    <div className="relative inline-flex items-center gap-1">
+      {children}
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
-        aria-label="Help"
+        onClick={() => setOpen(!open)}
+        className="text-gray-400 hover:text-gray-600"
       >
         <HelpCircle className="h-4 w-4" />
       </button>
 
       <AnimatePresence>
-        {isOpen && (
+        {open && (
           <motion.div
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 4 }}
-            className="absolute left-1/2 top-full z-50 mt-2 w-64 -translate-x-1/2 rounded-lg bg-white p-4 shadow-xl ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-700"
+            className="absolute left-0 top-full z-50 mt-2 w-64 rounded-lg border border-gray-200 bg-white p-3 shadow-lg"
           >
-            <h4 className="mb-1 text-sm font-semibold text-zinc-900 dark:text-white">{title}</h4>
-            <p className="text-xs leading-relaxed text-zinc-500">{content}</p>
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-xs text-gray-600">{helpText}</p>
+              <button
+                onClick={() => setOpen(false)}
+                className="shrink-0 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
             {learnMoreUrl && (
               <a
                 href={learnMoreUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2 flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-500"
+                className="mt-2 inline-block text-xs font-medium text-indigo-600 hover:text-indigo-700"
               >
-                Learn more <ExternalLink className="h-3 w-3" />
+                Learn more &rarr;
               </a>
             )}
           </motion.div>
@@ -1360,253 +1781,405 @@ export function HelpTooltip({ title, content, learnMoreUrl }: HelpTooltipProps) 
     </div>
   );
 }
+```
 
-// --- Help center launcher ---
-// components/help/help-launcher.tsx
+### Slide-in Help Panel
+
+```tsx
 "use client";
 
-export function HelpLauncher() {
-  const [isOpen, setIsOpen] = useState(false);
+import { useState } from "react";
+import { HelpCircle, X, MessageCircle, Book, Search } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 
-  const helpLinks = [
-    { label: "Documentation", href: "/docs", icon: "book" },
-    { label: "Video tutorials", href: "/tutorials", icon: "play" },
-    { label: "API reference", href: "/api-docs", icon: "code" },
-    { label: "Community", href: "/community", icon: "users" },
-    { label: "Contact support", action: () => openChat(), icon: "message" },
-  ];
+interface HelpArticle {
+  id: string;
+  title: string;
+  summary: string;
+  url: string;
+  category: string;
+}
+
+const HELP_ARTICLES: HelpArticle[] = [
+  {
+    id: "1",
+    title: "Getting started with campaigns",
+    summary: "Learn how to create and manage your first campaign.",
+    url: "/docs/campaigns",
+    category: "Getting Started",
+  },
+  {
+    id: "2",
+    title: "Connecting data sources",
+    summary: "Link Google Ads, Meta Ads, and more.",
+    url: "/docs/integrations",
+    category: "Integrations",
+  },
+  {
+    id: "3",
+    title: "Understanding your dashboard",
+    summary: "Navigate metrics, charts, and filters.",
+    url: "/docs/dashboard",
+    category: "Getting Started",
+  },
+];
+
+export function HelpPanel() {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const filtered = HELP_ARTICLES.filter(
+    (a) =>
+      a.title.toLowerCase().includes(search.toLowerCase()) ||
+      a.summary.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <>
+      {/* Floating trigger */}
       <button
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-900 text-white shadow-lg hover:bg-zinc-800 dark:bg-white dark:text-zinc-900"
-        aria-label="Help"
+        onClick={() => setOpen(true)}
+        className="fixed bottom-6 right-6 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg hover:bg-indigo-700"
       >
-        <MessageCircle className="h-5 w-5" />
+        <HelpCircle className="h-6 w-6" />
       </button>
 
+      {/* Slide-in panel */}
       <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 16, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.95 }}
-            className="fixed bottom-20 right-6 z-50 w-72 rounded-xl bg-white shadow-2xl ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-700"
-          >
-            <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-3 dark:border-zinc-800">
-              <span className="text-sm font-semibold">Help & Resources</span>
-              <button onClick={() => setIsOpen(false)}>
-                <X className="h-4 w-4 text-zinc-400" />
-              </button>
-            </div>
-            <div className="p-2">
-              {helpLinks.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  onClick={(e) => {
-                    if (link.action) {
-                      e.preventDefault();
-                      link.action();
-                    }
-                  }}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-zinc-600 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                >
-                  {link.label}
-                </a>
-              ))}
-            </div>
-          </motion.div>
+        {open && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.3 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-black"
+              onClick={() => setOpen(false)}
+            />
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed right-0 top-0 z-50 h-full w-96 overflow-y-auto bg-white shadow-xl"
+            >
+              <div className="sticky top-0 border-b border-gray-200 bg-white p-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold">Help Center</h2>
+                  <button
+                    onClick={() => setOpen(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <div className="relative mt-3">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search help articles..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 py-2 pl-9 pr-3 text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="p-4">
+                {/* Quick actions */}
+                <div className="mb-6 grid grid-cols-2 gap-2">
+                  <button className="flex flex-col items-center gap-2 rounded-lg border border-gray-200 p-3 text-center hover:bg-gray-50">
+                    <Book className="h-5 w-5 text-indigo-600" />
+                    <span className="text-xs font-medium">Docs</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      // Open chat widget (Intercom, Crisp, etc.)
+                      if (typeof window !== "undefined" && (window as any).Intercom) {
+                        (window as any).Intercom("show");
+                      }
+                    }}
+                    className="flex flex-col items-center gap-2 rounded-lg border border-gray-200 p-3 text-center hover:bg-gray-50"
+                  >
+                    <MessageCircle className="h-5 w-5 text-indigo-600" />
+                    <span className="text-xs font-medium">Live Chat</span>
+                  </button>
+                </div>
+
+                {/* Articles */}
+                <div className="space-y-3">
+                  {filtered.map((article) => (
+                    <a
+                      key={article.id}
+                      href={article.url}
+                      className="block rounded-lg border border-gray-100 p-3 hover:bg-gray-50"
+                    >
+                      <span className="text-xs text-indigo-600">
+                        {article.category}
+                      </span>
+                      <p className="text-sm font-medium text-gray-900">
+                        {article.title}
+                      </p>
+                      <p className="mt-0.5 text-xs text-gray-500">
+                        {article.summary}
+                      </p>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </>
   );
 }
+```
 
-// --- Chat widget integration (Intercom example) ---
-// components/help/intercom-provider.tsx
-"use client";
+### Chat Widget Integration
 
-import { useEffect } from "react";
+For Intercom or Crisp, load the widget script in your root layout. Pass the `appId` from environment variables (never hardcoded) and user data from your auth context. Both providers offer React SDKs as well:
 
-interface IntercomUser {
-  id: string;
-  name: string;
-  email: string;
-  createdAt: number;
-}
+- **Intercom**: `@intercom/messenger-js-sdk`
+- **Crisp**: `crisp-sdk-web`
 
-export function IntercomProvider({ user }: { user: IntercomUser }) {
-  useEffect(() => {
-    // Load Intercom script
-    const w = window as any;
-    w.intercomSettings = {
-      api_base: "https://api-iam.intercom.io",
-      app_id: process.env.NEXT_PUBLIC_INTERCOM_APP_ID,
-      user_id: user.id,
-      name: user.name,
-      email: user.email,
-      created_at: user.createdAt,
-    };
+```tsx
+// Example: Intercom via their React SDK
+import Intercom from "@intercom/messenger-js-sdk";
 
-    const script = document.createElement("script");
-    script.async = true;
-    script.src = `https://widget.intercom.io/widget/${process.env.NEXT_PUBLIC_INTERCOM_APP_ID}`;
-    document.body.appendChild(script);
-
-    return () => {
-      document.body.removeChild(script);
-      if (w.Intercom) w.Intercom("shutdown");
-    };
-  }, [user]);
+export function IntercomProvider({ appId, user }: { appId: string; user?: { name: string; email: string; id: string } }) {
+  Intercom({
+    app_id: appId,
+    user_id: user?.id,
+    name: user?.name,
+    email: user?.email,
+  });
 
   return null;
-}
-
-function openChat() {
-  const w = window as any;
-  if (w.Intercom) {
-    w.Intercom("show");
-  }
 }
 ```
 
 ---
 
-## 10. Measuring Onboarding Success
+## 10. Measuring Success
 
-Track onboarding completion rate, time to first value, drop-off analysis, and A/B testing flows.
+Track onboarding completion rate, time to first value, drop-off analysis, and A/B testing.
+
+### Analytics Dashboard Component
 
 ```tsx
-// lib/onboarding/analytics.ts
+"use client";
 
-// --- Core metrics ---
+import { useEffect, useState } from "react";
+
 interface OnboardingMetrics {
   totalSignups: number;
-  completedOnboarding: number;
   completionRate: number;
-  medianTimeToFirstValue: number;      // minutes
-  activationRate: number;
-  dropOffByStep: Record<string, number>;
+  avgTimeToFirstValue: number; // hours
+  avgTimeToComplete: number; // hours
+  dropOffByStep: { step: string; dropOff: number }[];
+  variantPerformance: {
+    variant: string;
+    completionRate: number;
+    avgTTV: number;
+    sampleSize: number;
+  }[];
 }
 
-async function getOnboardingMetrics(
-  startDate: Date,
-  endDate: Date
-): Promise<OnboardingMetrics> {
-  const totalSignups = await db.user.count({
-    where: { createdAt: { gte: startDate, lte: endDate } },
-  });
+export function OnboardingAnalytics() {
+  const [metrics, setMetrics] = useState<OnboardingMetrics | null>(null);
+  const [period, setPeriod] = useState<"7d" | "30d" | "90d">("30d");
 
-  const completedOnboarding = await db.user.count({
-    where: {
-      createdAt: { gte: startDate, lte: endDate },
-      onboardingCompletedAt: { not: null },
-    },
-  });
+  useEffect(() => {
+    fetch(`/api/admin/onboarding-metrics?period=${period}`)
+      .then((r) => r.json())
+      .then(setMetrics);
+  }, [period]);
 
-  const activatedUsers = await db.user.count({
-    where: {
-      createdAt: { gte: startDate, lte: endDate },
-      activatedAt: { not: null },
-    },
-  });
+  if (!metrics) return <div>Loading...</div>;
 
-  // Time to first value (median)
-  const timeToValues = await db.$queryRaw<{ ttv: number }[]>`
-    SELECT EXTRACT(EPOCH FROM (activated_at - created_at)) / 60 as ttv
-    FROM users
-    WHERE created_at >= ${startDate}
-      AND created_at <= ${endDate}
-      AND activated_at IS NOT NULL
-    ORDER BY ttv
-  `;
+  return (
+    <div className="space-y-8">
+      {/* Period selector */}
+      <div className="flex gap-2">
+        {(["7d", "30d", "90d"] as const).map((p) => (
+          <button
+            key={p}
+            onClick={() => setPeriod(p)}
+            className={`rounded-md px-3 py-1.5 text-sm ${
+              period === p
+                ? "bg-indigo-600 text-white"
+                : "bg-gray-100 text-gray-700"
+            }`}
+          >
+            {p}
+          </button>
+        ))}
+      </div>
 
-  const medianIndex = Math.floor(timeToValues.length / 2);
-  const medianTimeToFirstValue = timeToValues[medianIndex]?.ttv ?? 0;
+      {/* KPI cards */}
+      <div className="grid grid-cols-4 gap-4">
+        <MetricCard
+          label="Completion Rate"
+          value={`${metrics.completionRate.toFixed(1)}%`}
+          trend={metrics.completionRate > 60 ? "good" : "bad"}
+        />
+        <MetricCard
+          label="Avg Time to First Value"
+          value={`${metrics.avgTimeToFirstValue.toFixed(1)}h`}
+          trend={metrics.avgTimeToFirstValue < 2 ? "good" : "bad"}
+        />
+        <MetricCard
+          label="Avg Time to Complete"
+          value={`${metrics.avgTimeToComplete.toFixed(1)}h`}
+          trend={metrics.avgTimeToComplete < 24 ? "good" : "bad"}
+        />
+        <MetricCard
+          label="Total Signups"
+          value={metrics.totalSignups.toString()}
+        />
+      </div>
 
-  // Drop-off by step
-  const stepCounts = await db.onboardingStep.groupBy({
-    by: ["stepId"],
-    _count: { userId: true },
-    where: {
-      user: { createdAt: { gte: startDate, lte: endDate } },
-    },
-  });
+      {/* Drop-off analysis */}
+      <div>
+        <h3 className="mb-4 text-lg font-semibold">Drop-off by Step</h3>
+        <div className="space-y-2">
+          {metrics.dropOffByStep.map((step) => (
+            <div key={step.step} className="flex items-center gap-4">
+              <span className="w-48 text-sm text-gray-700">{step.step}</span>
+              <div className="flex-1">
+                <div className="h-6 overflow-hidden rounded bg-gray-100">
+                  <div
+                    className={`h-full rounded ${
+                      step.dropOff > 30
+                        ? "bg-red-400"
+                        : step.dropOff > 15
+                          ? "bg-amber-400"
+                          : "bg-green-400"
+                    }`}
+                    style={{ width: `${step.dropOff}%` }}
+                  />
+                </div>
+              </div>
+              <span className="w-16 text-right text-sm text-gray-500">
+                {step.dropOff}%
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
 
-  const dropOffByStep: Record<string, number> = {};
-  const sortedSteps = stepCounts.sort((a, b) => a._count.userId - b._count.userId);
-  for (let i = 0; i < sortedSteps.length; i++) {
-    const current = sortedSteps[i]._count.userId;
-    const previous = i === 0 ? totalSignups : sortedSteps[i - 1]._count.userId;
-    dropOffByStep[sortedSteps[i].stepId] = previous - current;
-  }
-
-  return {
-    totalSignups,
-    completedOnboarding,
-    completionRate: totalSignups > 0 ? completedOnboarding / totalSignups : 0,
-    medianTimeToFirstValue,
-    activationRate: totalSignups > 0 ? activatedUsers / totalSignups : 0,
-    dropOffByStep,
-  };
+      {/* A/B test results */}
+      {metrics.variantPerformance.length > 1 && (
+        <div>
+          <h3 className="mb-4 text-lg font-semibold">A/B Test Results</h3>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 text-left text-gray-500">
+                <th className="pb-2">Variant</th>
+                <th className="pb-2">Completion Rate</th>
+                <th className="pb-2">Avg TTV</th>
+                <th className="pb-2">Sample Size</th>
+                <th className="pb-2">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {metrics.variantPerformance.map((v) => {
+                const best = metrics.variantPerformance.reduce((a, b) =>
+                  a.completionRate > b.completionRate ? a : b
+                );
+                return (
+                  <tr key={v.variant} className="border-b border-gray-100">
+                    <td className="py-3 font-medium">{v.variant}</td>
+                    <td className="py-3">{v.completionRate.toFixed(1)}%</td>
+                    <td className="py-3">{v.avgTTV.toFixed(1)}h</td>
+                    <td className="py-3">{v.sampleSize}</td>
+                    <td className="py-3">
+                      {v.variant === best.variant && (
+                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                          Leading
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
 }
 
-// --- A/B testing onboarding flows ---
-// lib/onboarding/ab-test.ts
-interface OnboardingVariant {
-  id: string;
-  name: string;
-  weight: number; // 0-1, must sum to 1 across variants
-  config: {
-    showWelcomeWizard: boolean;
-    showProductTour: boolean;
-    showSampleData: boolean;
-    checklistItems: string[];
-    dripEmailSequence: string;
-  };
+function MetricCard({
+  label,
+  value,
+  trend,
+}: {
+  label: string;
+  value: string;
+  trend?: "good" | "bad";
+}) {
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white p-4">
+      <p className="text-sm text-gray-500">{label}</p>
+      <p
+        className={`mt-1 text-2xl font-bold ${
+          trend === "good"
+            ? "text-green-600"
+            : trend === "bad"
+              ? "text-red-600"
+              : "text-gray-900"
+        }`}
+      >
+        {value}
+      </p>
+    </div>
+  );
 }
+```
 
-const ONBOARDING_VARIANTS: OnboardingVariant[] = [
-  {
-    id: "control",
-    name: "Standard onboarding",
-    weight: 0.5,
-    config: {
-      showWelcomeWizard: true,
-      showProductTour: true,
-      showSampleData: false,
-      checklistItems: ["create_project", "invite_team", "connect_integration"],
-      dripEmailSequence: "standard",
-    },
-  },
-  {
-    id: "streamlined",
-    name: "Streamlined onboarding",
-    weight: 0.5,
-    config: {
-      showWelcomeWizard: false,
-      showProductTour: true,
-      showSampleData: true,
-      checklistItems: ["explore_sample", "create_own_project"],
-      dripEmailSequence: "short",
-    },
-  },
-];
+### A/B Testing Assignment
 
-function assignVariant(userId: string): OnboardingVariant {
-  // Deterministic assignment based on user ID (consistent across sessions)
+```tsx
+// lib/ab-test.ts
+
+import { createClient } from "@/lib/supabase/server";
+
+export type OnboardingVariant = "control" | "wizard_v2" | "checklist_first";
+
+export async function assignOnboardingVariant(
+  userId: string
+): Promise<OnboardingVariant> {
+  const supabase = await createClient();
+
+  // Check existing assignment
+  const { data: existing } = await supabase
+    .from("ab_test_assignments")
+    .select("variant")
+    .eq("user_id", userId)
+    .eq("experiment", "onboarding_flow_v2")
+    .single();
+
+  if (existing) return existing.variant as OnboardingVariant;
+
+  // Assign based on deterministic hash of userId
+  const variants: OnboardingVariant[] = [
+    "control",
+    "wizard_v2",
+    "checklist_first",
+  ];
   const hash = simpleHash(userId);
-  const normalized = (hash % 1000) / 1000;
+  const variant = variants[hash % variants.length];
 
-  let cumulative = 0;
-  for (const variant of ONBOARDING_VARIANTS) {
-    cumulative += variant.weight;
-    if (normalized < cumulative) return variant;
-  }
+  await supabase.from("ab_test_assignments").insert({
+    user_id: userId,
+    experiment: "onboarding_flow_v2",
+    variant,
+  });
 
-  return ONBOARDING_VARIANTS[0];
+  return variant;
 }
 
 function simpleHash(str: string): number {
@@ -1618,103 +2191,143 @@ function simpleHash(str: string): number {
   }
   return Math.abs(hash);
 }
+```
 
-// --- Track variant performance ---
-async function getVariantPerformance(
-  startDate: Date,
-  endDate: Date
-): Promise<Record<string, { completionRate: number; activationRate: number; medianTtv: number }>> {
-  const results: Record<string, { completionRate: number; activationRate: number; medianTtv: number }> = {};
+### Metrics API Route
 
-  for (const variant of ONBOARDING_VARIANTS) {
-    const users = await db.user.findMany({
-      where: {
-        createdAt: { gte: startDate, lte: endDate },
-        onboardingVariant: variant.id,
-      },
-      select: {
-        onboardingCompletedAt: true,
-        activatedAt: true,
-        createdAt: true,
-      },
-    });
+```tsx
+// app/api/admin/onboarding-metrics/route.ts
+import { createClient } from "@supabase/supabase-js";
+import { NextRequest, NextResponse } from "next/server";
 
-    const total = users.length;
-    const completed = users.filter((u) => u.onboardingCompletedAt).length;
-    const activated = users.filter((u) => u.activatedAt).length;
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
-    const ttvValues = users
-      .filter((u) => u.activatedAt)
-      .map((u) => (u.activatedAt!.getTime() - u.createdAt.getTime()) / 60_000)
-      .sort((a, b) => a - b);
+export async function GET(req: NextRequest) {
+  const period = req.nextUrl.searchParams.get("period") ?? "30d";
+  const days = parseInt(period) || 30;
+  const since = new Date();
+  since.setDate(since.getDate() - days);
 
-    results[variant.id] = {
-      completionRate: total > 0 ? completed / total : 0,
-      activationRate: total > 0 ? activated / total : 0,
-      medianTtv: ttvValues[Math.floor(ttvValues.length / 2)] ?? 0,
-    };
+  const { count: totalSignups } = await supabase
+    .from("onboarding_progress")
+    .select("*", { count: "exact", head: true })
+    .gte("created_at", since.toISOString());
+
+  const { count: completed } = await supabase
+    .from("onboarding_progress")
+    .select("*", { count: "exact", head: true })
+    .gte("created_at", since.toISOString())
+    .not("completed_at", "is", null);
+
+  const completionRate =
+    totalSignups && totalSignups > 0
+      ? ((completed ?? 0) / totalSignups) * 100
+      : 0;
+
+  // Drop-off by step
+  const steps = [
+    "signed_up",
+    "completed_profile",
+    "created_first_project",
+    "connected_data_source",
+    "viewed_first_report",
+  ];
+
+  const dropOffByStep = [];
+  let previousCount = totalSignups ?? 0;
+
+  for (const step of steps) {
+    const { count } = await supabase
+      .from("activation_events")
+      .select("*", { count: "exact", head: true })
+      .eq("event_name", step)
+      .gte("created_at", since.toISOString());
+
+    const current = count ?? 0;
+    const dropOff =
+      previousCount > 0
+        ? ((previousCount - current) / previousCount) * 100
+        : 0;
+    dropOffByStep.push({ step, dropOff: Math.round(dropOff) });
+    previousCount = current;
   }
 
-  return results;
-}
-
-// --- Dashboard component for metrics ---
-// app/admin/onboarding/page.tsx
-// (Server component that fetches and displays metrics)
-export default async function OnboardingDashboard() {
-  const now = new Date();
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-  const metrics = await getOnboardingMetrics(thirtyDaysAgo, now);
-  const variantPerformance = await getVariantPerformance(thirtyDaysAgo, now);
-
-  return (
-    <div className="space-y-8 p-8">
-      <h1 className="text-2xl font-bold">Onboarding Analytics</h1>
-
-      {/* KPI cards */}
-      <div className="grid grid-cols-4 gap-4">
-        <MetricCard label="Completion Rate" value={`${(metrics.completionRate * 100).toFixed(1)}%`} />
-        <MetricCard label="Activation Rate" value={`${(metrics.activationRate * 100).toFixed(1)}%`} />
-        <MetricCard label="Median Time to Value" value={`${metrics.medianTimeToFirstValue.toFixed(0)} min`} />
-        <MetricCard label="Total Signups" value={metrics.totalSignups.toString()} />
-      </div>
-
-      {/* Drop-off funnel */}
-      <div className="rounded-xl border p-6">
-        <h2 className="mb-4 text-lg font-semibold">Drop-off by Step</h2>
-        {Object.entries(metrics.dropOffByStep).map(([step, dropOff]) => (
-          <div key={step} className="flex items-center justify-between border-b py-2">
-            <span className="text-sm">{step}</span>
-            <span className="text-sm text-red-500">-{dropOff} users</span>
-          </div>
-        ))}
-      </div>
-
-      {/* A/B test results */}
-      <div className="rounded-xl border p-6">
-        <h2 className="mb-4 text-lg font-semibold">A/B Test Results</h2>
-        {Object.entries(variantPerformance).map(([variantId, perf]) => (
-          <div key={variantId} className="mb-4 rounded-lg bg-zinc-50 p-4 dark:bg-zinc-800">
-            <div className="mb-2 font-medium">{variantId}</div>
-            <div className="grid grid-cols-3 gap-4 text-sm">
-              <div>Completion: {(perf.completionRate * 100).toFixed(1)}%</div>
-              <div>Activation: {(perf.activationRate * 100).toFixed(1)}%</div>
-              <div>Median TTV: {perf.medianTtv.toFixed(0)} min</div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+  // A/B test performance via RPC
+  const { data: variants } = await supabase.rpc(
+    "onboarding_variant_performance",
+    { since_date: since.toISOString() }
   );
-}
 
-function MetricCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
-      <div className="text-xs text-zinc-500">{label}</div>
-      <div className="mt-1 text-2xl font-bold text-zinc-900 dark:text-white">{value}</div>
-    </div>
-  );
+  return NextResponse.json({
+    totalSignups: totalSignups ?? 0,
+    completionRate,
+    avgTimeToFirstValue: 0, // compute via RPC
+    avgTimeToComplete: 0,
+    dropOffByStep,
+    variantPerformance: variants ?? [],
+  });
 }
 ```
+
+### Supabase RPC Functions for Metrics
+
+```sql
+-- Average time to first value
+create or replace function avg_time_to_first_value(since_date timestamptz)
+returns table(avg_hours numeric, avg_complete_hours numeric)
+language sql stable
+as $$
+  with user_times as (
+    select
+      user_id,
+      min(case when event_name = 'signed_up' then created_at end) as signup_time,
+      min(case when event_name = 'viewed_first_report' then created_at end) as first_value_time
+    from activation_events
+    where created_at >= since_date
+    group by user_id
+  )
+  select
+    avg(extract(epoch from (first_value_time - signup_time)) / 3600)::numeric as avg_hours,
+    avg(extract(epoch from (first_value_time - signup_time)) / 3600)::numeric as avg_complete_hours
+  from user_times
+  where first_value_time is not null;
+$$;
+
+-- Variant performance
+create or replace function onboarding_variant_performance(since_date timestamptz)
+returns table(variant text, completion_rate numeric, avg_ttv numeric, sample_size bigint)
+language sql stable
+as $$
+  select
+    a.variant,
+    (count(o.completed_at)::numeric / nullif(count(*)::numeric, 0) * 100) as completion_rate,
+    avg(
+      extract(epoch from (o.completed_at - o.created_at)) / 3600
+    )::numeric as avg_ttv,
+    count(*) as sample_size
+  from ab_test_assignments a
+  join onboarding_progress o on o.user_id = a.user_id
+  where a.experiment = 'onboarding_flow_v2'
+    and o.created_at >= since_date
+  group by a.variant;
+$$;
+```
+
+---
+
+## Quick Reference: Key Decisions
+
+| Decision | Recommendation |
+|---|---|
+| Tour library | react-joyride for speed, custom for full control |
+| State persistence | Supabase with RLS, localStorage as cache |
+| Email provider | Resend (simple API, React email templates) |
+| Analytics | PostHog (open-source) or Mixpanel |
+| Chat widget | Crisp (free tier) or Intercom (enterprise) |
+| A/B testing | Custom (deterministic hash) or PostHog feature flags |
+| Activation metric | "Viewed first report" -- the moment user sees value |
+| Target completion rate | 60-80% within first 7 days |
+| Target TTV | Under 5 minutes for initial value moment |

@@ -1,42 +1,94 @@
-# Data Visualization
+# Data Visualization in React/Next.js
 
-Complete guide for building charts, dashboards, and data visualizations in Next.js. Primary recommendation: **Recharts**.
+## Table of Contents
+- [1. Library Comparison](#1-library-comparison)
+- [2. Recharts Setup](#2-recharts-setup)
+  - [Installation and SSR-Safe Import](#installation-and-ssr-safe-import)
+  - [OKLCH Color Palette](#oklch-color-palette)
+  - [ResponsiveContainer (Always Wrap Charts)](#responsivecontainer-always-wrap-charts)
+  - [Line Chart](#line-chart)
+  - [Bar Chart](#bar-chart)
+  - [Area Chart](#area-chart)
+  - [Pie / Donut Chart](#pie--donut-chart)
+  - [Custom Tooltip](#custom-tooltip)
+- [3. Tremor -- Dashboard Components](#3-tremor----dashboard-components)
+  - [Installation](#installation)
+  - [KPI Cards](#kpi-cards)
+  - [Sparklines and Mini Charts](#sparklines-and-mini-charts)
+  - [Tremor Bar/Line Charts (Higher-Level API)](#tremor-barline-charts-higher-level-api)
+- [4. Dashboard Layouts](#4-dashboard-layouts)
+  - [Grid Pattern for KPI Dashboard](#grid-pattern-for-kpi-dashboard)
+  - [Reusable Chart Card Component](#reusable-chart-card-component)
+  - [Responsive Breakpoints Reference](#responsive-breakpoints-reference)
+- [5. Responsive Charts](#5-responsive-charts)
+  - [Mobile-Friendly Chart Pattern](#mobile-friendly-chart-pattern)
+  - [useMediaQuery Hook](#usemediaquery-hook)
+  - [Simplified Mobile View (Table Fallback)](#simplified-mobile-view-table-fallback)
+- [6. Real-Time Charts](#6-real-time-charts)
+  - [Streaming Data with Supabase Realtime](#streaming-data-with-supabase-realtime)
+  - [Animated Value Change](#animated-value-change)
+  - [Smooth Animation on Data Change](#smooth-animation-on-data-change)
+  - [Polling Fallback (When Realtime Is Not Available)](#polling-fallback-when-realtime-is-not-available)
+- [7. Data Formatting](#7-data-formatting)
+  - [Number Formatting Utilities](#number-formatting-utilities)
+  - [Using Formatters in Charts](#using-formatters-in-charts)
+- [8. Export -- PNG, CSV, PDF](#8-export----png-csv-pdf)
+  - [Chart to PNG (html2canvas)](#chart-to-png-html2canvas)
+  - [Data to CSV](#data-to-csv)
+  - [PDF Export (jsPDF + autotable)](#pdf-export-jspdf--autotable)
+  - [PDF Report Generation (react-pdf -- Alternative)](#pdf-report-generation-react-pdf----alternative)
+- [9. Accessible Charts](#9-accessible-charts)
+  - [ARIA Labels](#aria-labels)
+  - [Color-Blind Safe Palettes](#color-blind-safe-palettes)
+  - [Data Table Alternative Toggle](#data-table-alternative-toggle)
+- [10. Common Chart Types -- When to Use](#10-common-chart-types----when-to-use)
+  - [Funnel Chart](#funnel-chart)
+  - [Composed Chart (Bar + Line Overlay)](#composed-chart-bar--line-overlay)
+  - [Heatmap (Custom with CSS Grid)](#heatmap-custom-with-css-grid)
+- [Quick Decision Guide](#quick-decision-guide)
+
+Reference for building charts, dashboards, and data-driven UIs. Primary recommendation: **Recharts**.
 
 ---
 
 ## 1. Library Comparison
 
-| Criteria | Recharts | Tremor | Chart.js (react-chartjs-2) | Nivo |
+| Feature | Recharts | Tremor | Chart.js (react-chartjs-2) | Nivo |
 |---|---|---|---|---|
 | Bundle size (gzip) | ~45 KB | ~90 KB (includes Tremor UI) | ~35 KB | ~60 KB per chart type |
-| Customization | High (composable API) | Low-Medium (opinionated) | Medium | Very High |
-| SSR support | Good (with dynamic import) | Good (built for Next.js) | Poor (canvas-based) | Good (SVG mode) |
+| SSR support | Good (SVG-based, dynamic import) | Good (built for Next.js) | Poor (canvas-based, needs `"use client"`) | Partial (SVG mode works) |
+| Customization | High (composable API) | Medium (opinionated design) | High (imperative config) | Very High (theming system) |
 | TypeScript | Excellent | Excellent | Good | Excellent |
-| Animation | Built-in | Built-in | Built-in | Built-in |
 | Learning curve | Low | Very Low | Medium | Medium-High |
-| React-native feel | Declarative JSX | Pre-built components | Imperative config | Declarative JSX |
-| Accessibility | Manual | Basic built-in | Poor | Good |
+| React integration | Native (declarative JSX) | Native (Tailwind + React) | Wrapper library | Native (declarative JSX) |
+| Animation | Built-in | Built-in | Built-in | Built-in (spring physics) |
+| Accessibility | Manual | Basic built-in | Poor | Good (built-in ARIA) |
 | Active maintenance | Active | Active | Active | Active |
 
 **Decision guide:**
 - **Recharts** -- Best all-around for custom dashboards. Composable, flexible, good docs.
-- **Tremor** -- Best for shipping fast. Pre-built dashboard components. Less control.
-- **Chart.js** -- Best if you need canvas rendering (large datasets, 10K+ points). Poor SSR.
+- **Tremor** -- Best for shipping fast. Pre-built dashboard components with KPI cards and sparklines. Less control.
+- **Chart.js** -- Best if you need canvas rendering for large datasets (10K+ points). Poor SSR.
 - **Nivo** -- Best for advanced/exotic chart types (sunburst, chord, sankey). Heavier.
 
 **Recommendation:** Use Recharts for most projects. Add Tremor for rapid prototyping or internal tools.
+
+```bash
+# Primary setup
+bun add recharts
+# For dashboard components
+bun add @tremor/react
+```
 
 ---
 
 ## 2. Recharts Setup
 
-### Installation
+### Installation and SSR-Safe Import
 
 ```bash
 bun add recharts
 ```
-
-### Dynamic Import (SSR-safe)
 
 ```tsx
 // components/charts/chart-wrapper.tsx
@@ -49,6 +101,65 @@ const Chart = dynamic(() => import("./my-chart"), { ssr: false });
 
 export function ChartWrapper(props: ChartProps) {
   return <Chart {...props} />;
+}
+```
+
+### OKLCH Color Palette
+
+```ts
+// lib/chart-colors.ts
+export const CHART_COLORS = {
+  primary: "oklch(0.65 0.2 250)",    // blue
+  success: "oklch(0.7 0.18 150)",    // green
+  warning: "oklch(0.75 0.15 80)",    // yellow
+  danger: "oklch(0.65 0.22 25)",     // red
+  info: "oklch(0.7 0.15 200)",       // cyan
+  purple: "oklch(0.6 0.2 290)",      // purple
+  pink: "oklch(0.65 0.22 330)",      // pink
+  orange: "oklch(0.7 0.2 50)",       // orange
+} as const;
+
+// Ordered palette for multi-series charts
+export const SERIES_COLORS = [
+  CHART_COLORS.primary,
+  CHART_COLORS.success,
+  CHART_COLORS.warning,
+  CHART_COLORS.danger,
+  CHART_COLORS.purple,
+  CHART_COLORS.info,
+  CHART_COLORS.pink,
+  CHART_COLORS.orange,
+];
+
+// Color-blind safe palette (Wong palette adapted to OKLCH)
+export const COLORBLIND_PALETTE = [
+  "oklch(0.45 0.18 260)",  // dark blue
+  "oklch(0.75 0.18 85)",   // yellow/orange
+  "oklch(0.55 0.00 0)",    // dark gray
+  "oklch(0.70 0.20 30)",   // orange
+  "oklch(0.60 0.15 200)",  // teal
+  "oklch(0.80 0.10 140)",  // light green
+];
+```
+
+### ResponsiveContainer (Always Wrap Charts)
+
+```tsx
+// IMPORTANT: ResponsiveContainer needs a parent with defined height
+export function ChartFrame({
+  children,
+  height = 350,
+}: {
+  children: React.ReactNode;
+  height?: number;
+}) {
+  return (
+    <div style={{ width: "100%", height }}>
+      <ResponsiveContainer width="100%" height="100%">
+        {children}
+      </ResponsiveContainer>
+    </div>
+  );
 }
 ```
 
@@ -75,11 +186,7 @@ interface DataPoint {
   target: number;
 }
 
-interface RevenueChartProps {
-  data: DataPoint[];
-}
-
-export function RevenueChart({ data }: RevenueChartProps) {
+export function RevenueChart({ data }: { data: DataPoint[] }) {
   return (
     <ResponsiveContainer width="100%" height={350}>
       <LineChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
@@ -95,14 +202,14 @@ export function RevenueChart({ data }: RevenueChartProps) {
         <YAxis
           tick={{ fontSize: 12 }}
           className="fill-muted-foreground"
-          tickFormatter={(value) => formatCurrency(value, true)}
+          tickFormatter={(value) => abbreviateNumber(value)}
         />
         <Tooltip content={<CustomTooltip />} />
         <Legend />
         <Line
           type="monotone"
           dataKey="revenue"
-          stroke="oklch(0.65 0.2 250)"
+          stroke={CHART_COLORS.primary}
           strokeWidth={2}
           dot={false}
           activeDot={{ r: 5 }}
@@ -111,7 +218,7 @@ export function RevenueChart({ data }: RevenueChartProps) {
         <Line
           type="monotone"
           dataKey="target"
-          stroke="oklch(0.7 0.15 150)"
+          stroke={CHART_COLORS.success}
           strokeWidth={2}
           strokeDasharray="5 5"
           dot={false}
@@ -134,16 +241,8 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Cell,
+  Legend,
 } from "recharts";
-
-const COLORS = [
-  "oklch(0.65 0.2 250)",  // blue
-  "oklch(0.7 0.18 150)",  // green
-  "oklch(0.7 0.2 30)",    // orange
-  "oklch(0.65 0.22 330)", // pink
-  "oklch(0.75 0.15 80)",  // yellow
-];
 
 export function ChannelBarChart({ data }: { data: { channel: string; spend: number; revenue: number }[] }) {
   return (
@@ -151,10 +250,11 @@ export function ChannelBarChart({ data }: { data: { channel: string; spend: numb
       <BarChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
         <XAxis dataKey="channel" tick={{ fontSize: 12 }} />
-        <YAxis tickFormatter={(v) => formatCurrency(v, true)} />
+        <YAxis tickFormatter={(v) => abbreviateNumber(v)} />
         <Tooltip content={<CustomTooltip />} />
-        <Bar dataKey="spend" name="Spend" fill="oklch(0.65 0.2 250)" radius={[4, 4, 0, 0]} />
-        <Bar dataKey="revenue" name="Revenue" fill="oklch(0.7 0.18 150)" radius={[4, 4, 0, 0]} />
+        <Legend />
+        <Bar dataKey="spend" name="Spend" fill={CHART_COLORS.primary} radius={[4, 4, 0, 0]} />
+        <Bar dataKey="revenue" name="Revenue" fill={CHART_COLORS.success} radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -178,6 +278,16 @@ export function TrafficAreaChart({ data }: { data: { date: string; organic: numb
   return (
     <ResponsiveContainer width="100%" height={350}>
       <AreaChart data={data}>
+        <defs>
+          <linearGradient id="colorOrganic" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor={CHART_COLORS.success} stopOpacity={0.3} />
+            <stop offset="95%" stopColor={CHART_COLORS.success} stopOpacity={0} />
+          </linearGradient>
+          <linearGradient id="colorPaid" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor={CHART_COLORS.primary} stopOpacity={0.3} />
+            <stop offset="95%" stopColor={CHART_COLORS.primary} stopOpacity={0} />
+          </linearGradient>
+        </defs>
         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
         <XAxis dataKey="date" />
         <YAxis />
@@ -186,22 +296,25 @@ export function TrafficAreaChart({ data }: { data: { date: string; organic: numb
           type="monotone"
           dataKey="organic"
           stackId="1"
-          stroke="oklch(0.7 0.18 150)"
-          fill="oklch(0.7 0.18 150 / 0.3)"
+          stroke={CHART_COLORS.success}
+          fillOpacity={1}
+          fill="url(#colorOrganic)"
         />
         <Area
           type="monotone"
           dataKey="paid"
           stackId="1"
-          stroke="oklch(0.65 0.2 250)"
-          fill="oklch(0.65 0.2 250 / 0.3)"
+          stroke={CHART_COLORS.primary}
+          fillOpacity={1}
+          fill="url(#colorPaid)"
         />
         <Area
           type="monotone"
           dataKey="direct"
           stackId="1"
-          stroke="oklch(0.7 0.2 30)"
-          fill="oklch(0.7 0.2 30 / 0.3)"
+          stroke={CHART_COLORS.orange}
+          fill={CHART_COLORS.orange}
+          fillOpacity={0.3}
         />
       </AreaChart>
     </ResponsiveContainer>
@@ -209,12 +322,18 @@ export function TrafficAreaChart({ data }: { data: { date: string; organic: numb
 }
 ```
 
-### Pie Chart
+### Pie / Donut Chart
 
 ```tsx
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
-export function DistributionPieChart({ data }: { data: { name: string; value: number }[] }) {
+export function DistributionPieChart({
+  data,
+  innerRadius = 60,
+}: {
+  data: { name: string; value: number }[];
+  innerRadius?: number; // 0 = pie, 60+ = donut
+}) {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <PieChart>
@@ -222,17 +341,17 @@ export function DistributionPieChart({ data }: { data: { name: string; value: nu
           data={data}
           cx="50%"
           cy="50%"
-          innerRadius={60}
+          innerRadius={innerRadius}
           outerRadius={100}
           paddingAngle={2}
           dataKey="value"
           label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
         >
           {data.map((_, index) => (
-            <Cell key={index} fill={COLORS[index % COLORS.length]} />
+            <Cell key={index} fill={SERIES_COLORS[index % SERIES_COLORS.length]} />
           ))}
         </Pie>
-        <Tooltip />
+        <Tooltip content={<CustomTooltip />} />
         <Legend />
       </PieChart>
     </ResponsiveContainer>
@@ -244,13 +363,19 @@ export function DistributionPieChart({ data }: { data: { name: string; value: nu
 
 ```tsx
 // components/charts/custom-tooltip.tsx
-function CustomTooltip({ active, payload, label }: any) {
+interface TooltipProps {
+  active?: boolean;
+  payload?: Array<{ name: string; value: number; color: string }>;
+  label?: string;
+}
+
+function CustomTooltip({ active, payload, label }: TooltipProps) {
   if (!active || !payload?.length) return null;
 
   return (
     <div className="rounded-lg border bg-background px-3 py-2 shadow-md">
       <p className="mb-1 text-sm font-medium">{label}</p>
-      {payload.map((entry: any, index: number) => (
+      {payload.map((entry, index) => (
         <div key={index} className="flex items-center gap-2 text-sm">
           <div
             className="h-2.5 w-2.5 rounded-full"
@@ -269,37 +394,9 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 ```
 
-### OKLCH Color Palette for Charts
-
-```ts
-// lib/chart-colors.ts
-export const CHART_COLORS = {
-  primary: "oklch(0.65 0.2 250)",    // blue
-  success: "oklch(0.7 0.18 150)",    // green
-  warning: "oklch(0.75 0.15 80)",    // yellow
-  danger: "oklch(0.65 0.22 25)",     // red
-  info: "oklch(0.7 0.15 200)",       // cyan
-  purple: "oklch(0.6 0.2 290)",      // purple
-  pink: "oklch(0.65 0.22 330)",      // pink
-  orange: "oklch(0.7 0.2 50)",       // orange
-} as const;
-
-// Ordered palette for series
-export const SERIES_COLORS = [
-  CHART_COLORS.primary,
-  CHART_COLORS.success,
-  CHART_COLORS.warning,
-  CHART_COLORS.danger,
-  CHART_COLORS.purple,
-  CHART_COLORS.info,
-  CHART_COLORS.pink,
-  CHART_COLORS.orange,
-];
-```
-
 ---
 
-## 3. Tremor
+## 3. Tremor -- Dashboard Components
 
 ### Installation
 
@@ -310,16 +407,17 @@ bun add @tremor/react
 ### KPI Cards
 
 ```tsx
-import { Card, Metric, Text, Flex, BadgeDelta } from "@tremor/react";
+import { Card, Metric, Text, Flex, BadgeDelta, ProgressBar } from "@tremor/react";
 
 interface KpiCardProps {
   title: string;
   value: string;
   delta: string;
   deltaType: "increase" | "moderateIncrease" | "unchanged" | "moderateDecrease" | "decrease";
+  progress?: number;
 }
 
-export function KpiCard({ title, value, delta, deltaType }: KpiCardProps) {
+export function KpiCard({ title, value, delta, deltaType, progress }: KpiCardProps) {
   return (
     <Card>
       <Flex justifyContent="between" alignItems="center">
@@ -329,35 +427,78 @@ export function KpiCard({ title, value, delta, deltaType }: KpiCardProps) {
         </div>
         <BadgeDelta deltaType={deltaType}>{delta}</BadgeDelta>
       </Flex>
+      {progress !== undefined && (
+        <ProgressBar value={progress} className="mt-3" />
+      )}
     </Card>
   );
 }
 
 // Usage
 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-  <KpiCard title="Revenue" value="$45,231" delta="+12.5%" deltaType="increase" />
+  <KpiCard title="Revenue" value="$45,231" delta="+12.5%" deltaType="increase" progress={72} />
   <KpiCard title="Users" value="2,350" delta="+8.2%" deltaType="moderateIncrease" />
   <KpiCard title="Churn" value="3.2%" delta="-0.5%" deltaType="decrease" />
   <KpiCard title="ARPU" value="$19.25" delta="+2.1%" deltaType="increase" />
 </div>
 ```
 
-### Tremor Sparklines and Mini Charts
+### Sparklines and Mini Charts
 
 ```tsx
 import { SparkAreaChart, SparkBarChart, SparkLineChart } from "@tremor/react";
 
-export function MiniTrend({ data }: { data: { value: number }[] }) {
+export function SparklineMetric({
+  title,
+  value,
+  data,
+  dataKey,
+}: {
+  title: string;
+  value: string;
+  data: any[];
+  dataKey: string;
+}) {
   return (
-    <SparkAreaChart
-      data={data}
-      categories={["value"]}
-      index="date"
-      colors={["emerald"]}
-      className="h-8 w-24"
-    />
+    <Card className="max-w-sm">
+      <Text>{title}</Text>
+      <Flex className="mt-2" justifyContent="between" alignItems="end">
+        <Metric>{value}</Metric>
+        <SparkAreaChart
+          data={data}
+          categories={[dataKey]}
+          index="date"
+          className="h-10 w-28"
+          colors={["emerald"]}
+        />
+      </Flex>
+    </Card>
   );
 }
+```
+
+### Tremor Bar/Line Charts (Higher-Level API)
+
+```tsx
+import { BarChart as TremorBar, LineChart as TremorLine } from "@tremor/react";
+
+// Tremor charts are higher-level -- less config, faster to build
+<TremorBar
+  data={data}
+  index="month"
+  categories={["Revenue", "Cost"]}
+  colors={["blue", "rose"]}
+  valueFormatter={(v) => `$${(v / 1000).toFixed(1)}K`}
+  yAxisWidth={60}
+/>
+
+<TremorLine
+  data={data}
+  index="date"
+  categories={["Sessions", "Conversions"]}
+  colors={["emerald", "amber"]}
+  curveType="monotone"
+/>
 ```
 
 ---
@@ -373,16 +514,16 @@ export default function DashboardPage() {
     <div className="space-y-6 p-6">
       {/* KPI row */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard title="Revenue" value="$45,231" delta="+12.5%" />
-        <KpiCard title="Orders" value="1,234" delta="+8.2%" />
-        <KpiCard title="Conversion" value="3.2%" delta="+0.5%" />
-        <KpiCard title="Avg. Order" value="$36.68" delta="-2.1%" />
+        <KpiCard title="Revenue" value="$45,231" delta="+12.5%" deltaType="increase" />
+        <KpiCard title="Orders" value="1,234" delta="+8.2%" deltaType="increase" />
+        <KpiCard title="Conversion" value="3.2%" delta="+0.5%" deltaType="increase" />
+        <KpiCard title="Avg. Order" value="$36.68" delta="-2.1%" deltaType="decrease" />
       </div>
 
       {/* Main charts row */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <ChartCard title="Revenue Over Time">
+          <ChartCard title="Revenue Over Time" description="Last 30 days">
             <RevenueChart data={revenueData} />
           </ChartCard>
         </div>
@@ -394,7 +535,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Secondary row */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <ChartCard title="Ad Spend vs Revenue">
           <ChannelBarChart data={adData} />
         </ChartCard>
@@ -412,7 +553,7 @@ export default function DashboardPage() {
 }
 ```
 
-### Chart Card Component
+### Reusable Chart Card Component
 
 ```tsx
 // components/charts/chart-card.tsx
@@ -445,18 +586,18 @@ export function ChartCard({ title, description, action, children }: ChartCardPro
 
 ### Responsive Breakpoints Reference
 
-| Breakpoint | Width | Layout |
-|---|---|---|
-| Mobile | < 640px | Single column, stacked cards |
-| Tablet | 640-1023px | 2 columns for KPIs, single for charts |
-| Desktop | 1024-1279px | 4 KPI cols, 2/3 + 1/3 for charts |
-| Wide | 1280px+ | Full grid, side-by-side charts |
+| Breakpoint | Width | Tailwind | Layout |
+|---|---|---|---|
+| Mobile | < 640px | default | Single column, stacked cards |
+| Tablet | 640-1023px | `sm:` | 2 columns for KPIs, single for charts |
+| Desktop | 1024-1279px | `lg:` | 4 KPI cols, 2/3 + 1/3 for charts |
+| Wide | 1280px+ | `xl:` | Full grid, side-by-side charts, sidebar |
 
 ---
 
 ## 5. Responsive Charts
 
-### Mobile-Friendly Chart Patterns
+### Mobile-Friendly Chart Pattern
 
 ```tsx
 "use client";
@@ -475,6 +616,8 @@ export function ResponsiveRevenueChart({ data }: { data: DataPoint[] }) {
           tick={{ fontSize: isMobile ? 10 : 12 }}
           // Show fewer ticks on mobile
           interval={isMobile ? Math.floor(data.length / 5) : "preserveStartEnd"}
+          angle={isMobile ? -45 : 0}
+          textAnchor={isMobile ? "end" : "middle"}
           tickFormatter={(value) =>
             isMobile
               ? new Date(value).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })
@@ -484,7 +627,7 @@ export function ResponsiveRevenueChart({ data }: { data: DataPoint[] }) {
         <YAxis
           tick={{ fontSize: isMobile ? 10 : 12 }}
           width={isMobile ? 40 : 60}
-          tickFormatter={(v) => formatCurrency(v, true)}
+          tickFormatter={(v) => abbreviateNumber(v)}
         />
         <Tooltip content={<CustomTooltip />} />
         {/* Hide legend on mobile to save space */}
@@ -492,9 +635,9 @@ export function ResponsiveRevenueChart({ data }: { data: DataPoint[] }) {
         <Line
           type="monotone"
           dataKey="revenue"
-          stroke="oklch(0.65 0.2 250)"
+          stroke={CHART_COLORS.primary}
           strokeWidth={2}
-          dot={false}
+          dot={!isMobile} // Fewer dots on mobile
         />
       </LineChart>
     </ResponsiveContainer>
@@ -526,6 +669,41 @@ export function useMediaQuery(query: string): boolean {
 }
 ```
 
+### Simplified Mobile View (Table Fallback)
+
+```tsx
+export function ChartWithTableFallback({ data }: { data: any[] }) {
+  const isMobile = useMediaQuery("(max-width: 480px)");
+
+  if (isMobile) {
+    return (
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b text-left">
+              <th className="pb-2">Date</th>
+              <th className="pb-2 text-right">Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.slice(-7).map((row) => (
+              <tr key={row.date} className="border-b">
+                <td className="py-1.5">{row.date}</td>
+                <td className="py-1.5 text-right font-medium">
+                  {formatNumber(row.value)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  return <TrafficAreaChart data={data} />;
+}
+```
+
 ---
 
 ## 6. Real-Time Charts
@@ -535,7 +713,7 @@ export function useMediaQuery(query: string): boolean {
 ```tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
   LineChart,
@@ -582,7 +760,6 @@ export function RealtimeChart({ metricId }: { metricId: string }) {
         (payload) => {
           setData((prev) => {
             const updated = [...prev, payload.new as LiveDataPoint];
-            // Keep only last N points
             return updated.slice(-maxPoints);
           });
         }
@@ -606,15 +783,33 @@ export function RealtimeChart({ metricId }: { metricId: string }) {
         <Line
           type="monotone"
           dataKey="value"
-          stroke="oklch(0.65 0.2 250)"
+          stroke={CHART_COLORS.primary}
           strokeWidth={2}
           dot={false}
-          isAnimationActive={true}
-          animationDuration={300}
-          animationEasing="ease-out"
+          isAnimationActive={false} // Disable for streaming performance
         />
       </LineChart>
     </ResponsiveContainer>
+  );
+}
+```
+
+### Animated Value Change
+
+```tsx
+import { useSpring, animated } from "@react-spring/web";
+
+export function AnimatedMetric({ value }: { value: number }) {
+  const { number } = useSpring({
+    from: { number: 0 },
+    number: value,
+    config: { duration: 800 },
+  });
+
+  return (
+    <animated.span className="text-3xl font-bold">
+      {number.to((n) => formatCurrency(n))}
+    </animated.span>
   );
 }
 ```
@@ -629,12 +824,26 @@ export function RealtimeChart({ metricId }: { metricId: string }) {
   animationEasing="ease-out"
 />
 
-// For bar charts, use:
+// For bar charts:
 <Bar
   isAnimationActive={true}
   animationDuration={500}
   animationBegin={0}
 />
+```
+
+### Polling Fallback (When Realtime Is Not Available)
+
+```tsx
+import useSWR from "swr";
+
+export function PollingChart({ endpoint }: { endpoint: string }) {
+  const { data } = useSWR(endpoint, fetcher, {
+    refreshInterval: 5000, // Poll every 5 seconds
+  });
+
+  return data ? <RevenueChart data={data} /> : <ChartSkeleton />;
+}
 ```
 
 ---
@@ -717,7 +926,7 @@ function getCurrencySymbol(currency: string): string {
 }
 
 /**
- * Format a delta value with + or - prefix and color hint.
+ * Format a delta value with + or - prefix.
  */
 export function formatDelta(value: number): { text: string; positive: boolean } {
   const prefix = value >= 0 ? "+" : "";
@@ -726,11 +935,29 @@ export function formatDelta(value: number): { text: string; positive: boolean } 
     positive: value >= 0,
   };
 }
+
+/**
+ * Format duration (seconds to human-readable).
+ */
+export function formatDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return `${h}h ${m}m`;
+}
+```
+
+### Using Formatters in Charts
+
+```tsx
+<YAxis tickFormatter={(value) => abbreviateNumber(value)} />
+<Tooltip formatter={(value: number) => [formatCurrency(value), "Revenue"]} />
 ```
 
 ---
 
-## 8. Export
+## 8. Export -- PNG, CSV, PDF
 
 ### Chart to PNG (html2canvas)
 
@@ -772,7 +999,7 @@ export function ExportableChart({
 
   return (
     <div>
-      <div className="flex justify-end mb-2">
+      <div className="mb-2 flex justify-end">
         <Button variant="outline" size="sm" onClick={exportPNG}>
           <Download className="mr-1.5 h-3.5 w-3.5" />
           PNG
@@ -802,8 +1029,8 @@ export function downloadCSV(
       headers
         .map((h) => {
           const val = row[h];
-          // Escape values containing commas or quotes
           const str = String(val ?? "");
+          // Escape values containing commas or quotes
           return str.includes(",") || str.includes('"')
             ? `"${str.replace(/"/g, '""')}"`
             : str;
@@ -821,7 +1048,51 @@ export function downloadCSV(
 }
 ```
 
-### PDF Report Generation (react-pdf)
+### PDF Export (jsPDF + autotable)
+
+```bash
+bun add jspdf jspdf-autotable html2canvas-pro
+```
+
+```tsx
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import html2canvas from "html2canvas-pro";
+
+export async function exportDashboardPDF(
+  chartRef: HTMLDivElement,
+  tableData: Record<string, any>[],
+  title: string
+) {
+  const pdf = new jsPDF("landscape", "mm", "a4");
+
+  // Title
+  pdf.setFontSize(18);
+  pdf.text(title, 14, 22);
+  pdf.setFontSize(10);
+  pdf.text(`Generated: ${new Date().toLocaleDateString("de-DE")}`, 14, 30);
+
+  // Chart as image
+  const canvas = await html2canvas(chartRef, { scale: 2 });
+  const imgData = canvas.toDataURL("image/png");
+  pdf.addImage(imgData, "PNG", 14, 35, 267, 100);
+
+  // Data table
+  if (tableData.length) {
+    const headers = Object.keys(tableData[0]);
+    autoTable(pdf, {
+      startY: 140,
+      head: [headers],
+      body: tableData.map((row) => headers.map((h) => String(row[h]))),
+      styles: { fontSize: 8 },
+    });
+  }
+
+  pdf.save(`${title.toLowerCase().replace(/\s+/g, "-")}.pdf`);
+}
+```
+
+### PDF Report Generation (react-pdf -- Alternative)
 
 ```bash
 bun add @react-pdf/renderer
@@ -841,15 +1112,13 @@ import {
 const styles = StyleSheet.create({
   page: { padding: 40, fontFamily: "Helvetica" },
   title: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
-  section: { marginBottom: 16 },
-  sectionTitle: { fontSize: 14, fontWeight: "bold", marginBottom: 8 },
-  row: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: "#eee", paddingVertical: 6 },
-  cell: { flex: 1, fontSize: 10 },
-  headerCell: { flex: 1, fontSize: 10, fontWeight: "bold" },
   kpiRow: { flexDirection: "row", gap: 16, marginBottom: 24 },
   kpiCard: { flex: 1, backgroundColor: "#f8f9fa", padding: 12, borderRadius: 4 },
   kpiLabel: { fontSize: 10, color: "#666" },
   kpiValue: { fontSize: 18, fontWeight: "bold", marginTop: 4 },
+  row: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: "#eee", paddingVertical: 6 },
+  cell: { flex: 1, fontSize: 10 },
+  headerCell: { flex: 1, fontSize: 10, fontWeight: "bold" },
 });
 
 interface ReportData {
@@ -868,8 +1137,6 @@ function ReportDocument({ data }: { data: ReportData }) {
         <Text style={{ fontSize: 12, color: "#666", marginBottom: 24 }}>
           {data.dateRange}
         </Text>
-
-        {/* KPI Cards */}
         <View style={styles.kpiRow}>
           {data.kpis.map((kpi, i) => (
             <View key={i} style={styles.kpiCard}>
@@ -878,10 +1145,7 @@ function ReportDocument({ data }: { data: ReportData }) {
             </View>
           ))}
         </View>
-
-        {/* Data Table */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Details</Text>
+        <View>
           <View style={styles.row}>
             {data.tableHeaders.map((h, i) => (
               <Text key={i} style={styles.headerCell}>{h}</Text>
@@ -900,13 +1164,8 @@ function ReportDocument({ data }: { data: ReportData }) {
   );
 }
 
-export async function generatePDF(data: ReportData): Promise<Blob> {
-  return await pdf(<ReportDocument data={data} />).toBlob();
-}
-
-// Trigger download
 export async function downloadPDF(data: ReportData, filename: string) {
-  const blob = await generatePDF(data);
+  const blob = await pdf(<ReportDocument data={data} />).toBlob();
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -937,8 +1196,8 @@ export function AccessibleChart({ data, title }: { data: DataPoint[]; title: str
         <caption>{title}</caption>
         <thead>
           <tr>
-            <th>Date</th>
-            <th>Value</th>
+            <th scope="col">Date</th>
+            <th scope="col">Value</th>
           </tr>
         </thead>
         <tbody>
@@ -972,7 +1231,7 @@ export const COLOR_BLIND_SAFE = [
   "#000000", // black
 ];
 
-// Use patterns in addition to color for critical distinctions
+// Use patterns in addition to color for critical distinctions.
 // Combine with strokeDasharray for line charts:
 const LINE_STYLES = [
   { strokeDasharray: "0" },          // solid
@@ -980,6 +1239,8 @@ const LINE_STYLES = [
   { strokeDasharray: "2 2" },        // dotted
   { strokeDasharray: "8 4 2 4" },    // dash-dot
 ];
+
+// Also use COLORBLIND_PALETTE from section 2 (OKLCH version)
 ```
 
 ### Data Table Alternative Toggle
@@ -1004,7 +1265,7 @@ export function ChartWithTableToggle({
 
   return (
     <div>
-      <div className="flex justify-end gap-1 mb-2">
+      <div className="mb-2 flex justify-end gap-1">
         <Button
           variant={view === "chart" ? "secondary" : "ghost"}
           size="icon"
@@ -1060,18 +1321,20 @@ export function ChartWithTableToggle({
 
 ## 10. Common Chart Types -- When to Use
 
-| Chart Type | Use Case | Recharts Component | Example |
+| Chart Type | Use Case | Recharts Component | Data Shape |
 |---|---|---|---|
-| **Line** | Trends over time | `LineChart` + `Line` | Revenue over months, daily active users |
-| **Bar** | Category comparison | `BarChart` + `Bar` | Revenue by channel, spend by campaign |
-| **Area** | Volume/composition over time | `AreaChart` + `Area` | Traffic sources stacked, cumulative revenue |
-| **Pie / Donut** | Part-to-whole composition | `PieChart` + `Pie` | Budget allocation, traffic share |
-| **Funnel** | Conversion steps | `FunnelChart` + `Funnel` | Signup funnel, sales pipeline |
-| **Radar** | Multi-variable comparison | `RadarChart` + `Radar` | Feature comparison, skill assessment |
-| **Scatter** | Correlation between variables | `ScatterChart` + `Scatter` | Spend vs. revenue correlation |
-| **Composed** | Mixed chart types | `ComposedChart` | Bar + Line overlay (volume + trend) |
+| **Line** | Trends over time | `LineChart` + `Line` | `[{ date, value }]` |
+| **Bar** | Category comparison | `BarChart` + `Bar` | `[{ name, valueA, valueB }]` |
+| **Area** | Volume/composition over time | `AreaChart` + `Area` | `[{ date, organic, paid }]` |
+| **Pie / Donut** | Part-to-whole composition | `PieChart` + `Pie` | `[{ name, value }]` |
+| **Stacked Bar** | Composition across categories | `BarChart` + `Bar` (stackId) | `[{ name, a, b, c }]` |
+| **Funnel** | Conversion steps | `FunnelChart` + `Funnel` | `[{ name, value }]` |
+| **Radar** | Multi-variable comparison | `RadarChart` + `Radar` | `[{ subject, a, b }]` |
+| **Scatter** | Correlation between variables | `ScatterChart` + `Scatter` | `[{ x, y }]` |
+| **Composed** | Mixed chart types | `ComposedChart` | Bar + Line overlay |
+| **Heatmap** | Density / intensity matrix | Custom (CSS grid) | `number[][]` |
 
-### Funnel Chart Example
+### Funnel Chart
 
 ```tsx
 import { FunnelChart, Funnel, Cell, Tooltip, LabelList, ResponsiveContainer } from "recharts";
@@ -1084,30 +1347,21 @@ const funnelData = [
   { name: "Retained (M3)", value: 480 },
 ];
 
-const FUNNEL_COLORS = [
-  "oklch(0.65 0.2 250)",
-  "oklch(0.68 0.19 230)",
-  "oklch(0.71 0.18 200)",
-  "oklch(0.74 0.17 170)",
-  "oklch(0.7 0.18 150)",
-];
-
-export function ConversionFunnel() {
+export function ConversionFunnel({ data }: { data: typeof funnelData }) {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <FunnelChart>
-        <Tooltip />
-        <Funnel dataKey="value" data={funnelData} isAnimationActive>
-          {funnelData.map((_, index) => (
-            <Cell key={index} fill={FUNNEL_COLORS[index]} />
+        <Tooltip content={<CustomTooltip />} />
+        <Funnel dataKey="value" data={data} isAnimationActive>
+          {data.map((_, index) => (
+            <Cell key={index} fill={SERIES_COLORS[index % SERIES_COLORS.length]} />
           ))}
           <LabelList
             position="right"
-            content={({ name, value }) => (
-              <text x={0} y={0} fill="#666" fontSize={12}>
-                {name}: {formatNumber(value as number)}
-              </text>
-            )}
+            fill="#666"
+            stroke="none"
+            dataKey="name"
+            fontSize={12}
           />
         </Funnel>
       </FunnelChart>
@@ -1141,17 +1395,17 @@ export function SpendRevenueChart({
       <ComposedChart data={data}>
         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
         <XAxis dataKey="month" />
-        <YAxis yAxisId="left" tickFormatter={(v) => formatCurrency(v, true)} />
+        <YAxis yAxisId="left" tickFormatter={(v) => abbreviateNumber(v)} />
         <YAxis yAxisId="right" orientation="right" tickFormatter={(v) => `${v}x`} />
         <Tooltip content={<CustomTooltip />} />
         <Legend />
-        <Bar yAxisId="left" dataKey="spend" fill="oklch(0.65 0.2 250 / 0.7)" name="Spend" radius={[4, 4, 0, 0]} />
-        <Bar yAxisId="left" dataKey="revenue" fill="oklch(0.7 0.18 150 / 0.7)" name="Revenue" radius={[4, 4, 0, 0]} />
+        <Bar yAxisId="left" dataKey="spend" fill={`${CHART_COLORS.primary} / 0.7)`} name="Spend" radius={[4, 4, 0, 0]} />
+        <Bar yAxisId="left" dataKey="revenue" fill={`${CHART_COLORS.success} / 0.7)`} name="Revenue" radius={[4, 4, 0, 0]} />
         <Line
           yAxisId="right"
           type="monotone"
           dataKey="roas"
-          stroke="oklch(0.7 0.2 30)"
+          stroke={CHART_COLORS.orange}
           strokeWidth={2}
           dot={{ r: 3 }}
           name="ROAS"
@@ -1162,13 +1416,15 @@ export function SpendRevenueChart({
 }
 ```
 
-### Heatmap (Custom with Recharts)
+### Heatmap (Custom with CSS Grid)
 
-Recharts does not have a native heatmap. Build one with a grid of `<rect>` elements or use Nivo's `HeatMap`. Simple approach with Tailwind:
+Recharts does not have a native heatmap. Build one with a CSS grid:
 
 ```tsx
 // components/charts/heatmap.tsx
 "use client";
+
+import { Fragment } from "react";
 
 interface HeatmapProps {
   data: { x: string; y: string; value: number }[];
@@ -1180,7 +1436,7 @@ interface HeatmapProps {
 export function Heatmap({ data, xLabels, yLabels, maxValue }: HeatmapProps) {
   function getColor(value: number): string {
     const intensity = Math.min(value / maxValue, 1);
-    // oklch: low value = light, high value = saturated blue
+    // OKLCH: low value = light, high value = saturated blue
     return `oklch(${0.95 - intensity * 0.35} ${intensity * 0.2} 250)`;
   }
 
@@ -1192,15 +1448,15 @@ export function Heatmap({ data, xLabels, yLabels, maxValue }: HeatmapProps) {
         {/* Header row */}
         <div />
         {xLabels.map((x) => (
-          <div key={x} className="text-center text-xs text-muted-foreground truncate">
+          <div key={x} className="truncate text-center text-xs text-muted-foreground">
             {x}
           </div>
         ))}
 
         {/* Data rows */}
         {yLabels.map((y) => (
-          <>
-            <div key={`label-${y}`} className="flex items-center text-xs text-muted-foreground">
+          <Fragment key={y}>
+            <div className="flex items-center text-xs text-muted-foreground">
               {y}
             </div>
             {xLabels.map((x) => {
@@ -1216,10 +1472,22 @@ export function Heatmap({ data, xLabels, yLabels, maxValue }: HeatmapProps) {
                 </div>
               );
             })}
-          </>
+          </Fragment>
         ))}
       </div>
     </div>
   );
 }
 ```
+
+---
+
+## Quick Decision Guide
+
+- **Need a chart fast?** Use Tremor (pre-styled, minimal config).
+- **Need full control?** Use Recharts (composable, customizable).
+- **Building a KPI dashboard?** Tremor KPI cards + Recharts for detailed charts.
+- **Real-time data?** Recharts + Supabase Realtime, disable animation for streaming.
+- **Exporting reports?** html2canvas-pro for charts, jsPDF + autotable for PDF, @react-pdf/renderer for styled PDFs.
+- **10K+ data points?** Consider Chart.js (canvas) or virtualized approaches.
+- **Accessibility?** Always include sr-only data table, use COLORBLIND_PALETTE, vary line dash patterns.

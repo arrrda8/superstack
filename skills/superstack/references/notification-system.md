@@ -1,5 +1,38 @@
 # Notification System
 
+## Table of Contents
+- [1. In-App Notifications](#1-in-app-notifications)
+  - [Notification Center Component](#notification-center-component)
+- [2. Email Notifications](#2-email-notifications)
+  - [React Email Template](#react-email-template)
+  - [Sending with Resend](#sending-with-resend)
+- [3. Push Notifications](#3-push-notifications)
+  - [VAPID Key Generation](#vapid-key-generation)
+  - [Service Worker](#service-worker)
+  - [Permission Request and Subscription](#permission-request-and-subscription)
+  - [Server-Side Push](#server-side-push)
+  - [Permission Request UX](#permission-request-ux)
+- [4. SMS Notifications](#4-sms-notifications)
+  - [Twilio Integration](#twilio-integration)
+  - [Usage Guidelines](#usage-guidelines)
+- [5. Preference Management](#5-preference-management)
+  - [Notification Settings UI](#notification-settings-ui)
+- [6. Batching and Digests](#6-batching-and-digests)
+  - [Notification Queue with Batching](#notification-queue-with-batching)
+  - [Digest Cron Job (API Route or Edge Function)](#digest-cron-job-api-route-or-edge-function)
+- [7. Database Schema](#7-database-schema)
+- [8. Realtime Delivery](#8-realtime-delivery)
+  - [Supabase Realtime for Instant In-App Notifications](#supabase-realtime-for-instant-in-app-notifications)
+- [9. Templates](#9-templates)
+  - [Notification Template System](#notification-template-system)
+  - [Localization Support](#localization-support)
+- [10. Webhook Notifications](#10-webhook-notifications)
+  - [Webhook Dispatcher](#webhook-dispatcher)
+  - [Webhook Management API](#webhook-management-api)
+  - [Verifying Webhooks (Consumer Side)](#verifying-webhooks-consumer-side)
+- [Unified Notification Dispatcher](#unified-notification-dispatcher)
+  - [Usage](#usage)
+
 Complete guide for building a multi-channel notification system in a Next.js + Supabase stack.
 
 ---

@@ -1,5 +1,21 @@
 # Tracking Pixels & Privacy-Compliant Analytics
 
+## Table of Contents
+- [1. Architecture Overview](#1-architecture-overview)
+- [2. Google Consent Mode v2 (MANDATORY)](#2-google-consent-mode-v2-mandatory)
+- [3. Google Tag Manager Integration](#3-google-tag-manager-integration)
+- [4. Facebook/Meta Pixel + Conversions API](#4-facebookmeta-pixel--conversions-api)
+  - [Shared utilities](#shared-utilities)
+  - [Client-side tracking helper](#client-side-tracking-helper)
+  - [Server-side Meta CAPI route](#server-side-meta-capi-route)
+- [5. TikTok Pixel + Events API](#5-tiktok-pixel--events-api)
+- [6. LinkedIn Insight Tag + Conversions API](#6-linkedin-insight-tag--conversions-api)
+- [7. Privacy-Friendly Analytics Alternatives](#7-privacy-friendly-analytics-alternatives)
+  - [Plausible Analytics](#plausible-analytics)
+  - [Umami (self-hosted)](#umami-self-hosted)
+  - [PostHog (product analytics + session replay)](#posthog-product-analytics--session-replay)
+- [8. Critical Rules](#8-critical-rules)
+
 ## 1. Architecture Overview
 
 ```

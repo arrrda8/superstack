@@ -49,7 +49,7 @@ Every project built with Superstack should feel like it was crafted by a boutiqu
 - **OKLCH color system** — Perceptually uniform palettes from a single brand hue.
 - **Noise/grain textures** — SVG noise overlays for depth. Breaks the "too clean" AI look.
 - **Anti-AI design** — No symmetric grids, generic gradients, or default icons. Bento grids, asymmetric splits, editorial compositions.
-- **40 reference files** — Comprehensive patterns for every aspect of web development.
+- **43 reference files** — Comprehensive patterns for every aspect of web development, each with a Table of Contents for quick navigation.
 
 ### Technical
 - **Better Auth (2026 standard)** — Auth.js team joined Better Auth in Sept 2025.
@@ -112,14 +112,16 @@ superstack/
 │   └── build.md                        # /superstack:build slash command
 ├── skills/
 │   └── superstack/
-│       ├── SKILL.md                    # Main skill file (16 phases)
-│       └── references/                 # 40 reference files
+│       ├── SKILL.md                    # Main skill file (368 lines, optimized per Anthropic guidelines)
+│       └── references/                 # 43 reference files (all with TOC)
 │           ├── # Core (Phase 0-3)
 │           ├── project-concept.md
 │           ├── copywriting-framework.md
 │           ├── design-patterns.md
 │           ├── animation-playbook.md
 │           ├── component-catalog.md
+│           ├── design-tokens.md
+│           ├── scaffolding-templates.md
 │           ├── # Backend & Data
 │           ├── auth-patterns.md
 │           ├── database-patterns.md
@@ -160,13 +162,16 @@ superstack/
 │           ├── # SaaS & Advanced
 │           ├── saas-features.md
 │           ├── multi-tenancy-patterns.md
-│           └── third-party-integration.md
+│           ├── third-party-integration.md
+│           └── parallel-agent-strategy.md
 ├── superstack.skill                    # Packaged skill (.zip)
 ├── LICENSE                             # MIT
 └── README.md
 ```
 
-## Reference Files (40 total)
+## Reference Files (43 total)
+
+All reference files over 300 lines include a Table of Contents for quick navigation.
 
 ### Core (Phase 0-3)
 | File | Contents |
@@ -174,8 +179,10 @@ superstack/
 | `project-concept.md` | Phase 0 concept template: personas, MoSCoW feature matrix, architecture diagram, user flows, decision log. |
 | `copywriting-framework.md` | Research process, pain point mapping, headline formulas, section-by-section writing guide, CTA strategy. |
 | `design-patterns.md` | Lenis setup, OKLCH colors, noise textures, hero variants, navigation patterns, Framer Motion + GSAP, Magic UI/Aceternity. |
+| `design-tokens.md` | Three-layer token architecture (primitive → semantic → component), OKLCH `@theme` setup, dark mode, palette generation. |
 | `animation-playbook.md` | Framer Motion, GSAP + Lenis ScrollTrigger, CSS-only animations, stagger patterns, page transitions, micro-interactions, reduced motion. |
 | `component-catalog.md` | 15 mandatory components (Button, Input, Modal, DataTable, Command Palette, etc.) with API design, a11y, variants. |
+| `scaffolding-templates.md` | Starting templates for SaaS, Landing Page, E-Commerce, Dashboard, Portfolio with key packages and route structures. |
 
 ### Backend & Data
 | File | Contents |
@@ -235,6 +242,7 @@ superstack/
 | `saas-features.md` | Admin Panel, Referral Program, Onboarding, Notifications, RBAC, Billing, Multi-tenancy, Audit Log, Feature Flags. |
 | `multi-tenancy-patterns.md` | Shared DB + RLS, schema-per-tenant, tenant context middleware, tenant-aware caching, billing per tenant. |
 | `third-party-integration.md` | API client wrapper, circuit breaker, OAuth2 refresh, retry with backoff, rate limit handling, data sync. |
+| `parallel-agent-strategy.md` | Agent assignments per phase group, merge strategy with git worktrees, practical scaling guidance. |
 
 ## Tech Stack Flexibility
 

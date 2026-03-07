@@ -1,5 +1,25 @@
 # Email System Patterns (2026)
 
+## Table of Contents
+- [React Email + Resend Setup](#react-email--resend-setup)
+  - [Installation](#installation)
+  - [Email Template (`emails/welcome.tsx`)](#email-template-emailswelcometsx)
+  - [Sending via Server Action (`app/actions/email.ts`)](#sending-via-server-action-appactionsemailts)
+  - [Local Preview](#local-preview)
+- [Service Comparison](#service-comparison)
+- [Essential Templates (8 Every App Needs)](#essential-templates-8-every-app-needs)
+  - [Best Practices](#best-practices)
+- [Email Deliverability: SPF, DKIM, DMARC](#email-deliverability-spf-dkim-dmarc)
+  - [SPF Record](#spf-record)
+  - [DKIM Record](#dkim-record)
+  - [DMARC Record](#dmarc-record)
+  - [Domain Warming Schedule (New Domains)](#domain-warming-schedule-new-domains)
+- [Onboarding Drip Sequence](#onboarding-drip-sequence)
+  - [Sequence Overview (5-7 Emails over 14-21 Days)](#sequence-overview-5-7-emails-over-14-21-days)
+  - [Key Principle: Behavior-Based, Not Time-Based](#key-principle-behavior-based-not-time-based)
+  - [Implementation: Resend + Supabase State Tracking](#implementation-resend--supabase-state-tracking)
+  - [Scheduling Options](#scheduling-options)
+
 ## React Email + Resend Setup
 
 ### Installation

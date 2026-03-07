@@ -1,5 +1,22 @@
 # Third-Party Integration Patterns
 
+## Table of Contents
+- [1. API Client Wrapper](#1-api-client-wrapper)
+- [2. Circuit Breaker](#2-circuit-breaker)
+- [3. OAuth2 Refresh Flow](#3-oauth2-refresh-flow)
+- [4. Retry with Exponential Backoff](#4-retry-with-exponential-backoff)
+- [5. Webhook Integration](#5-webhook-integration)
+- [6. API Key Management](#6-api-key-management)
+- [7. Rate Limit Handling](#7-rate-limit-handling)
+- [8. Data Sync Patterns](#8-data-sync-patterns)
+- [9. Error Mapping](#9-error-mapping)
+- [10. Common Integrations](#10-common-integrations)
+  - [Stripe](#stripe)
+  - [Resend (Email)](#resend-email)
+  - [Supabase](#supabase)
+  - [OpenAI / Anthropic](#openai--anthropic)
+  - [Google APIs](#google-apis)
+
 Reference for integrating external APIs, handling auth flows, managing rate limits, syncing data, and wiring up common services (Stripe, Resend, Supabase, OpenAI/Anthropic, Google APIs).
 
 ---

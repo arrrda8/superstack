@@ -1,189 +1,358 @@
-# Media Pipeline — Next.js
+# Media Pipeline — Next.js Reference
+
+## Table of Contents
+- [1. OG Images](#1-og-images)
+  - [Static OG with `next/og` ImageResponse](#static-og-with-nextog-imageresponse)
+  - [Dynamic Per-Page OG](#dynamic-per-page-og)
+  - [OG Template System](#og-template-system)
+  - [Social Preview Testing](#social-preview-testing)
+- [2. Favicon System](#2-favicon-system)
+  - [File Convention (App Router)](#file-convention-app-router)
+  - [Static Icons in `public/`](#static-icons-in-public)
+  - [SVG Favicon with Dark Mode](#svg-favicon-with-dark-mode)
+  - [Dynamic Favicon Generation](#dynamic-favicon-generation)
+  - [Apple Touch Icon](#apple-touch-icon)
+  - [Web Manifest](#web-manifest)
+- [3. Video Embedding](#3-video-embedding)
+  - [Lazy YouTube with lite-youtube-embed](#lazy-youtube-with-lite-youtube-embed)
+  - [Self-Hosted Video with Poster Overlay](#self-hosted-video-with-poster-overlay)
+  - [Poster Image Helpers](#poster-image-helpers)
+- [4. SVG Handling](#4-svg-handling)
+  - [Inline SVG Components](#inline-svg-components)
+  - [SVGR Setup](#svgr-setup)
+  - [SVG Sprite System](#svg-sprite-system)
+  - [Animation-Ready SVGs](#animation-ready-svgs)
+  - [SVG Accessibility Patterns](#svg-accessibility-patterns)
+- [5. Image Optimization](#5-image-optimization)
+  - [Sharp for Server-Side Processing](#sharp-for-server-side-processing)
+  - [AVIF/WebP with next/image Config](#avifwebp-with-nextimage-config)
+  - [Responsive srcset with next/image](#responsive-srcset-with-nextimage)
+- [6. Content Images](#6-content-images)
+  - [MDX with next/image](#mdx-with-nextimage)
+  - [MDX Component Override](#mdx-component-override)
+  - [Blur Placeholder Generation at Build Time](#blur-placeholder-generation-at-build-time)
+  - [Art Direction with `<picture>`](#art-direction-with-picture)
+  - [CMS Image with Responsive Variants](#cms-image-with-responsive-variants)
+- [7. Icons](#7-icons)
+  - [Recommended Libraries](#recommended-libraries)
+  - [Setup and Tree-Shaking](#setup-and-tree-shaking)
+  - [Custom Icon Wrapper](#custom-icon-wrapper)
+  - [Consistent Sizing Rules](#consistent-sizing-rules)
+  - [Icon Button Pattern](#icon-button-pattern)
+- [8. Audio](#8-audio)
+  - [Audio Player Component](#audio-player-component)
+  - [Podcast Embedding](#podcast-embedding)
+- [9. File Type Detection](#9-file-type-detection)
+  - [Magic Bytes Validation](#magic-bytes-validation)
+  - [MIME Checking Utility](#mime-checking-utility)
+  - [Secure Upload Validation](#secure-upload-validation)
+  - [Server-Side Upload Route](#server-side-upload-route)
+- [10. CDN Strategy](#10-cdn-strategy)
+  - [Vercel Image Optimization (Default)](#vercel-image-optimization-default)
+  - [Cloudflare Images](#cloudflare-images)
+  - [Supabase Storage CDN](#supabase-storage-cdn)
+  - [CDN Selection Guide](#cdn-selection-guide)
+  - [Custom Image Loader for External CDN](#custom-image-loader-for-external-cdn)
+  - [Cache Headers for Self-Hosted Media](#cache-headers-for-self-hosted-media)
+
+Complete reference for handling images, video, audio, icons, SVGs, OG images, favicons, file validation, and CDN strategy in a Next.js App Router project.
+
+---
 
 ## 1. OG Images
 
-### Dynamic OG with next/og (ImageResponse)
+### Static OG with `next/og` ImageResponse
 
-```typescript
-// app/og/route.tsx
-import { ImageResponse } from 'next/og';
-import type { NextRequest } from 'next/server';
+```tsx
+// app/opengraph-image.tsx
+import { ImageResponse } from "next/og";
 
-export const runtime = 'edge';
+export const runtime = "edge";
+export const alt = "Site title";
+export const size = { width: 1200, height: 630 };
+export const contentType = "image/png";
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const title = searchParams.get('title') ?? 'Default Title';
-  const description = searchParams.get('description') ?? '';
-
-  const interBold = await fetch(
-    new URL('../../assets/fonts/Inter-Bold.ttf', import.meta.url)
+export default async function Image() {
+  const inter = await fetch(
+    new URL("../assets/fonts/Inter-Bold.ttf", import.meta.url)
   ).then((res) => res.arrayBuffer());
 
   return new ImageResponse(
     (
       <div
         style={{
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          padding: '80px',
-          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-          color: 'white',
-          fontFamily: 'Inter',
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          width: "100%",
+          height: "100%",
+          background: "linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 100%)",
+          color: "#fff",
+          fontFamily: "Inter",
         }}
       >
-        <div style={{ fontSize: 64, fontWeight: 700, lineHeight: 1.2 }}>
-          {title}
-        </div>
-        {description && (
-          <div style={{ fontSize: 28, marginTop: 24, opacity: 0.8 }}>
-            {description}
-          </div>
-        )}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            marginTop: 'auto',
-            fontSize: 24,
-          }}
-        >
-          <img
-            src="https://example.com/logo.png"
-            width={40}
-            height={40}
-            style={{ marginRight: 12 }}
-          />
-          example.com
-        </div>
+        <h1 style={{ fontSize: 64, margin: 0 }}>Your Site Title</h1>
+        <p style={{ fontSize: 28, opacity: 0.7 }}>Tagline goes here</p>
       </div>
     ),
     {
-      width: 1200,
-      height: 630,
-      fonts: [{ name: 'Inter', data: interBold, style: 'normal', weight: 700 }],
+      ...size,
+      fonts: [{ name: "Inter", data: inter, style: "normal", weight: 700 }],
     }
   );
 }
 ```
 
-### Per-page OG metadata
+### Dynamic Per-Page OG
 
-```typescript
-// app/blog/[slug]/page.tsx
-import type { Metadata } from 'next';
+```tsx
+// app/blog/[slug]/opengraph-image.tsx
+import { ImageResponse } from "next/og";
+import { getPost } from "@/lib/posts";
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+export const runtime = "edge";
+export const size = { width: 1200, height: 630 };
+export const contentType = "image/png";
+export const alt = "Blog post cover";
+
+export async function generateImageMetadata({
+  params,
+}: {
+  params: { slug: string };
+}) {
   const post = await getPost(params.slug);
-  return {
-    title: post.title,
-    description: post.excerpt,
-    openGraph: {
-      title: post.title,
-      description: post.excerpt,
-      images: [
-        {
-          url: `/og?title=${encodeURIComponent(post.title)}&description=${encodeURIComponent(post.excerpt)}`,
-          width: 1200,
-          height: 630,
-          alt: post.title,
-        },
-      ],
-    },
-    twitter: {
-      card: 'summary_large_image',
-    },
-  };
+  return [{ id: "og", alt: post.title, size, contentType }];
+}
+
+export default async function Image({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  const post = await getPost(params.slug);
+
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "flex-end",
+          width: "100%",
+          height: "100%",
+          padding: 60,
+          background: "#0a0a0a",
+          color: "#fafafa",
+        }}
+      >
+        <p style={{ fontSize: 24, color: "#888", margin: 0 }}>
+          {post.category}
+        </p>
+        <h1 style={{ fontSize: 56, margin: "16px 0 0", lineHeight: 1.15 }}>
+          {post.title}
+        </h1>
+        <p style={{ fontSize: 22, color: "#aaa", marginTop: 20 }}>
+          {post.author} &middot; {post.date}
+        </p>
+      </div>
+    ),
+    { ...size }
+  );
 }
 ```
 
-### OG template system
+### OG Template System
 
-```typescript
+```tsx
 // lib/og-templates.tsx
-type OGTemplate = 'blog' | 'product' | 'landing';
+type OGTemplate = "default" | "blog" | "product" | "event";
 
-const templates: Record<OGTemplate, (props: Record<string, string>) => JSX.Element> = {
-  blog: ({ title, author, date }) => (
-    <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', background: '#0f172a', color: '#fff', padding: 80 }}>
-      <div style={{ fontSize: 20, opacity: 0.6, textTransform: 'uppercase' as const }}>Blog</div>
-      <div style={{ fontSize: 56, fontWeight: 700, marginTop: 24 }}>{title}</div>
-      <div style={{ display: 'flex', marginTop: 'auto', fontSize: 22 }}>
-        <span>{author}</span>
-        <span style={{ margin: '0 16px' }}>·</span>
-        <span>{date}</span>
-      </div>
+interface OGData {
+  title: string;
+  subtitle?: string;
+  tag?: string;
+  logoUrl?: string;
+  bgColor?: string;
+}
+
+const templates: Record<OGTemplate, (data: OGData) => React.ReactElement> = {
+  default: (data) => (
+    <div
+      style={{
+        display: "flex",
+        width: "100%",
+        height: "100%",
+        background: data.bgColor ?? "#0a0a0a",
+        color: "#fff",
+        alignItems: "center",
+        justifyContent: "center",
+        flexDirection: "column",
+      }}
+    >
+      <h1 style={{ fontSize: 60 }}>{data.title}</h1>
+      {data.subtitle && (
+        <p style={{ fontSize: 28, opacity: 0.7 }}>{data.subtitle}</p>
+      )}
     </div>
   ),
-  product: ({ name, tagline, price }) => (
-    <div style={{ display: 'flex', width: '100%', height: '100%', background: '#fff', color: '#0f172a', padding: 80 }}>
-      <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-        <div style={{ fontSize: 56, fontWeight: 700 }}>{name}</div>
-        <div style={{ fontSize: 28, marginTop: 16, opacity: 0.7 }}>{tagline}</div>
-        <div style={{ fontSize: 48, marginTop: 'auto', fontWeight: 700 }}>{price}</div>
-      </div>
+
+  blog: (data) => (
+    <div
+      style={{
+        display: "flex",
+        width: "100%",
+        height: "100%",
+        background: "#0f172a",
+        color: "#f8fafc",
+        padding: 60,
+        flexDirection: "column",
+        justifyContent: "flex-end",
+      }}
+    >
+      {data.tag && (
+        <span
+          style={{
+            fontSize: 20,
+            color: "#38bdf8",
+            textTransform: "uppercase",
+            letterSpacing: 2,
+          }}
+        >
+          {data.tag}
+        </span>
+      )}
+      <h1 style={{ fontSize: 52, marginTop: 12, lineHeight: 1.2 }}>
+        {data.title}
+      </h1>
     </div>
   ),
-  landing: ({ headline }) => (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', padding: 80 }}>
-      <div style={{ fontSize: 64, fontWeight: 700, textAlign: 'center' as const }}>{headline}</div>
+
+  product: (data) => (
+    <div
+      style={{
+        display: "flex",
+        width: "100%",
+        height: "100%",
+        background: "linear-gradient(135deg, #1e1b4b, #312e81)",
+        color: "#fff",
+        alignItems: "center",
+        justifyContent: "center",
+        flexDirection: "column",
+      }}
+    >
+      <h1 style={{ fontSize: 56 }}>{data.title}</h1>
+      {data.subtitle && (
+        <p style={{ fontSize: 24, color: "#c7d2fe" }}>{data.subtitle}</p>
+      )}
+    </div>
+  ),
+
+  event: (data) => (
+    <div
+      style={{
+        display: "flex",
+        width: "100%",
+        height: "100%",
+        background: "#000",
+        color: "#fff",
+        padding: 60,
+        flexDirection: "column",
+        justifyContent: "space-between",
+      }}
+    >
+      <span style={{ fontSize: 20, color: "#f97316" }}>{data.tag}</span>
+      <h1 style={{ fontSize: 64 }}>{data.title}</h1>
     </div>
   ),
 };
 
-export function getOGTemplate(template: OGTemplate, props: Record<string, string>) {
-  return templates[template](props);
+export function renderOGTemplate(template: OGTemplate, data: OGData) {
+  return templates[template](data);
 }
 ```
 
-### Social preview testing
+### Social Preview Testing
 
-Use https://opengraph.xyz or https://socialsharepreview.com to verify. For automated checks:
+Use [opengraph.xyz](https://www.opengraph.xyz) or [socialsharepreview.com](https://socialsharepreview.com) to verify rendering.
 
-```typescript
-// e2e/og.spec.ts
-import { test, expect } from '@playwright/test';
+In development, visit `http://localhost:3000/opengraph-image` directly to preview the root OG image.
 
-test('OG image endpoint returns valid image', async ({ request }) => {
-  const response = await request.get('/og?title=Test+Post');
-  expect(response.status()).toBe(200);
-  expect(response.headers()['content-type']).toBe('image/png');
-});
+```tsx
+// app/api/og-preview/route.tsx — dev-only preview endpoint
+import { ImageResponse } from "next/og";
+import { renderOGTemplate } from "@/lib/og-templates";
 
-test('page has correct OG meta tags', async ({ page }) => {
-  await page.goto('/blog/test-post');
-  const ogTitle = await page.getAttribute('meta[property="og:title"]', 'content');
-  const ogImage = await page.getAttribute('meta[property="og:image"]', 'content');
-  expect(ogTitle).toBeTruthy();
-  expect(ogImage).toContain('/og?');
-});
+export const runtime = "edge";
+
+export async function GET(request: Request) {
+  if (process.env.NODE_ENV !== "development") {
+    return new Response("Not found", { status: 404 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const template = (searchParams.get("template") ?? "default") as any;
+  const title = searchParams.get("title") ?? "Preview Title";
+
+  return new ImageResponse(renderOGTemplate(template, { title }), {
+    width: 1200,
+    height: 630,
+  });
+}
+// Preview: http://localhost:3000/api/og-preview?template=blog&title=Hello+World
 ```
 
 ---
 
 ## 2. Favicon System
 
-### File structure
+### File Convention (App Router)
+
+Place these directly in `app/`:
 
 ```
 app/
-  favicon.ico          # 32x32 .ico fallback
-  icon.tsx             # dynamic SVG favicon (or icon.svg)
-  apple-icon.tsx       # 180x180 Apple Touch Icon
-  manifest.ts          # web manifest with icons
+  favicon.ico          # 32x32 classic favicon (auto-served at /favicon.ico)
+  icon.tsx             # dynamic generated icon (or icon.png / icon.svg)
+  apple-icon.tsx       # 180x180 apple touch icon (or apple-icon.png)
 ```
 
-### Dynamic SVG favicon with dark mode
+### Static Icons in `public/`
 
-```typescript
+```
+public/
+  favicon.ico          # 32x32 (or multi-size .ico containing 16, 32, 48)
+  apple-touch-icon.png # 180x180
+  icon-192.png         # PWA manifest
+  icon-512.png         # PWA manifest
+```
+
+### SVG Favicon with Dark Mode
+
+```xml
+<!-- app/icon.svg — place as static file, auto-detected by Next.js -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    rect { fill: #0a0a0a; }
+    path { fill: #fafafa; }
+    @media (prefers-color-scheme: light) {
+      rect { fill: #fafafa; }
+      path { fill: #0a0a0a; }
+    }
+  </style>
+  <rect width="32" height="32" rx="6" />
+  <path d="M8 24V8h6l6 10V8h4v16h-6L12 14v10H8z" />
+</svg>
+```
+
+### Dynamic Favicon Generation
+
+```tsx
 // app/icon.tsx
-import { ImageResponse } from 'next/og';
+import { ImageResponse } from "next/og";
 
 export const size = { width: 32, height: 32 };
-export const contentType = 'image/png';
+export const contentType = "image/png";
 
 export default function Icon() {
   return new ImageResponse(
@@ -192,17 +361,17 @@ export default function Icon() {
         style={{
           width: 32,
           height: 32,
-          borderRadius: 8,
-          background: '#6366f1',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'white',
+          borderRadius: 6,
+          background: "#0a0a0a",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#fafafa",
           fontSize: 20,
           fontWeight: 700,
         }}
       >
-        S
+        N
       </div>
     ),
     { ...size }
@@ -210,169 +379,220 @@ export default function Icon() {
 }
 ```
 
-### SVG favicon with dark mode support (static)
+### Apple Touch Icon
 
-```html
-<!-- In head or via metadata API -->
-<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-<link rel="icon" href="/favicon.ico" sizes="32x32" />
-<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+```tsx
+// app/apple-icon.tsx
+import { ImageResponse } from "next/og";
+
+export const size = { width: 180, height: 180 };
+export const contentType = "image/png";
+
+export default function AppleIcon() {
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: 180,
+          height: 180,
+          borderRadius: 36,
+          background: "linear-gradient(135deg, #0a0a0a, #1a1a2e)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#fafafa",
+          fontSize: 90,
+          fontWeight: 800,
+        }}
+      >
+        N
+      </div>
+    ),
+    { ...size }
+  );
+}
 ```
 
-```svg
-<!-- public/favicon.svg -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <style>
-    rect { fill: #6366f1; }
-    text { fill: #fff; }
-    @media (prefers-color-scheme: dark) {
-      rect { fill: #818cf8; }
-    }
-  </style>
-  <rect width="32" height="32" rx="6"/>
-  <text x="16" y="22" font-size="20" font-weight="bold" text-anchor="middle" font-family="system-ui">S</text>
-</svg>
-```
+### Web Manifest
 
-### Web manifest
-
-```typescript
+```ts
 // app/manifest.ts
-import type { MetadataRoute } from 'next';
+import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'My App',
-    short_name: 'App',
-    description: 'My Next.js application',
-    start_url: '/',
-    display: 'standalone',
-    background_color: '#0f172a',
-    theme_color: '#6366f1',
+    name: "App Name",
+    short_name: "App",
+    start_url: "/",
+    display: "standalone",
+    background_color: "#0a0a0a",
+    theme_color: "#0a0a0a",
     icons: [
-      { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
-      { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
-      { src: '/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
+      {
+        src: "/icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      },
     ],
   };
 }
 ```
 
-### Generator tools
-
-- **realfavicongenerator.net** — most comprehensive, generates all variants
-- **Sharp CLI** — `sharp -i logo.svg -o favicon.ico --resize 32 32`
-- **favicons npm** — `npx favicons logo.svg -o public/`
-
 ---
 
 ## 3. Video Embedding
 
-### Lazy-loaded YouTube (lite-youtube-embed)
+### Lazy YouTube with lite-youtube-embed
 
 ```bash
-npm install @nickvdh/lite-youtube-embed
-# or use the web component: npm install @nickvdh/lite-youtube
+bun add lite-youtube-embed
 ```
 
 ```tsx
 // components/youtube-embed.tsx
-'use client';
+"use client";
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
 interface YouTubeEmbedProps {
   videoId: string;
   title: string;
+  poster?: "default" | "mqdefault" | "hqdefault" | "maxresdefault";
 }
 
-export function YouTubeEmbed({ videoId, title }: YouTubeEmbedProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
+export function YouTubeEmbed({
+  videoId,
+  title,
+  poster = "hqdefault",
+}: YouTubeEmbedProps) {
+  const initialized = useRef(false);
+
+  useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+    import("lite-youtube-embed/src/lite-yt-embed.js");
+  }, []);
+
+  return (
+    <>
+      <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/lite-youtube-embed@0.3.3/src/lite-yt-embed.min.css"
+      />
+      {/* @ts-expect-error — custom element from lite-youtube-embed */}
+      <lite-youtube
+        videoid={videoId}
+        playlabel={`Play: ${title}`}
+        posterquality={poster}
+        style={{ maxWidth: "100%", borderRadius: 12 }}
+      />
+    </>
+  );
+}
+```
+
+### Self-Hosted Video with Poster Overlay
+
+```tsx
+// components/video-player.tsx
+"use client";
+
+import { useRef, useState, useCallback } from "react";
+import Image from "next/image";
+
+interface VideoPlayerProps {
+  src: string;
+  poster: string;
+  alt: string;
+  width: number;
+  height: number;
+}
+
+export function VideoPlayer({
+  src,
+  poster,
+  alt,
+  width,
+  height,
+}: VideoPlayerProps) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [playing, setPlaying] = useState(false);
+
+  const handlePlay = useCallback(() => {
+    setPlaying(true);
+    videoRef.current?.play();
+  }, []);
 
   return (
     <div
-      ref={containerRef}
-      className="relative aspect-video w-full cursor-pointer overflow-hidden rounded-xl bg-slate-900"
-      onClick={() => setIsLoaded(true)}
+      className="relative overflow-hidden rounded-xl"
+      style={{ aspectRatio: `${width}/${height}` }}
     >
-      {isLoaded ? (
-        <iframe
-          src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1`}
-          title={title}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          className="absolute inset-0 h-full w-full"
-        />
-      ) : (
-        <>
-          <img
-            src={`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`}
-            alt={title}
-            loading="lazy"
-            className="h-full w-full object-cover"
-          />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-600 text-white shadow-lg">
-              <svg viewBox="0 0 24 24" className="ml-1 h-8 w-8" fill="currentColor">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </div>
-          </div>
-        </>
+      {!playing && (
+        <button
+          onClick={handlePlay}
+          className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 transition hover:bg-black/40"
+          aria-label={`Play video: ${alt}`}
+        >
+          <svg
+            className="h-16 w-16 text-white drop-shadow-lg"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        </button>
       )}
+      {!playing && (
+        <Image
+          src={poster}
+          alt={alt}
+          fill
+          className="object-cover"
+          priority
+        />
+      )}
+      <video
+        ref={videoRef}
+        src={src}
+        controls={playing}
+        playsInline
+        preload="none"
+        className="h-full w-full"
+        width={width}
+        height={height}
+      />
     </div>
   );
 }
 ```
 
-### Self-hosted video with poster
+### Poster Image Helpers
 
-```tsx
-// components/video-player.tsx
-'use client';
+```ts
+// lib/video-poster.ts
 
-import { useRef, useState } from 'react';
+/** Generate poster at build time with ffmpeg (script, not runtime):
+ *  ffmpeg -i video.mp4 -vframes 1 -q:v 2 -vf "scale=1280:-1" poster.jpg
+ */
 
-interface VideoPlayerProps {
-  src: string;
-  poster?: string;
-  className?: string;
+export function getYouTubePoster(
+  videoId: string,
+  quality:
+    | "default"
+    | "mqdefault"
+    | "hqdefault"
+    | "sddefault"
+    | "maxresdefault" = "hqdefault"
+): string {
+  return `https://img.youtube.com/vi/${videoId}/${quality}.jpg`;
 }
 
-export function VideoPlayer({ src, poster, className }: VideoPlayerProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-
-  return (
-    <div className={`relative overflow-hidden rounded-xl ${className ?? ''}`}>
-      <video
-        ref={videoRef}
-        poster={poster}
-        preload="none"
-        playsInline
-        className="h-full w-full"
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
-      >
-        <source src={src} type="video/mp4" />
-        <source src={src.replace('.mp4', '.webm')} type="video/webm" />
-      </video>
-      {!isPlaying && (
-        <button
-          onClick={() => videoRef.current?.play()}
-          className="absolute inset-0 flex items-center justify-center bg-black/30"
-          aria-label="Play video"
-        >
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/90">
-            <svg viewBox="0 0 24 24" className="ml-1 h-8 w-8" fill="currentColor">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </div>
-        </button>
-      )}
-    </div>
-  );
+export function getVimeoPosterUrl(videoId: string): string {
+  return `https://vumbnail.com/${videoId}.jpg`;
 }
 ```
 
@@ -380,30 +600,74 @@ export function VideoPlayer({ src, poster, className }: VideoPlayerProps) {
 
 ## 4. SVG Handling
 
-### SVGR setup (inline SVG as React components)
+### Inline SVG Components
 
-```bash
-npm install -D @svgr/webpack
+```tsx
+// components/icons/logo.tsx
+interface LogoProps {
+  className?: string;
+  "aria-label"?: string;
+}
+
+export function Logo({ className, "aria-label": ariaLabel }: LogoProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 120 32"
+      className={className}
+      role="img"
+      aria-label={ariaLabel ?? "Company logo"}
+    >
+      <title>{ariaLabel ?? "Company logo"}</title>
+      <path fill="currentColor" d="M10 4h12v4H14v6h6v4h-6v10h-4V4z" />
+    </svg>
+  );
+}
 ```
 
-```typescript
+### SVGR Setup
+
+```bash
+bun add -d @svgr/webpack
+```
+
+```ts
 // next.config.ts
-import type { NextConfig } from 'next';
+import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   webpack(config) {
     const fileLoaderRule = config.module.rules.find(
-      (rule: any) => rule.test?.test?.('.svg')
+      (rule: any) => rule.test?.test?.(".svg")
     );
+
     config.module.rules.push(
+      // Reapply existing rule but only for *.svg?url imports
       { ...fileLoaderRule, test: /\.svg$/i, resourceQuery: /url/ },
+      // Convert all other *.svg imports to React components
       {
         test: /\.svg$/i,
-        resourceQuery: { not: [/url/] },
         issuer: fileLoaderRule.issuer,
-        use: [{ loader: '@svgr/webpack', options: { svgo: true, svgoConfig: { plugins: [{ name: 'removeViewBox', active: false }] } } }],
+        resourceQuery: {
+          not: [...(fileLoaderRule.resourceQuery?.not || []), /url/],
+        },
+        use: [
+          {
+            loader: "@svgr/webpack",
+            options: {
+              svgoConfig: {
+                plugins: [
+                  { name: "removeViewBox", active: false },
+                  { name: "removeDimensions", active: true },
+                ],
+              },
+              svgProps: { role: "img" },
+            },
+          },
+        ],
       }
     );
+
     fileLoaderRule.exclude = /\.svg$/i;
     return config;
   },
@@ -414,138 +678,259 @@ export default nextConfig;
 
 ```tsx
 // Usage
-import Logo from '@/assets/logo.svg';
-// <Logo className="h-8 w-8 text-indigo-500" />
-```
+import Logo from "@/assets/logo.svg"; // as React component
+import logoUrl from "@/assets/logo.svg?url"; // as URL string
 
-### SVG sprite system
-
-```tsx
-// components/icon-sprite.tsx
-export function IconSprite() {
+export function Header() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" className="hidden">
-      <symbol id="icon-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-        <path d="M5 12h14M12 5l7 7-7 7" />
-      </symbol>
-      <symbol id="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-        <path d="M20 6L9 17l-5-5" />
-      </symbol>
-    </svg>
-  );
-}
-
-// Usage
-export function SpriteIcon({ name, className }: { name: string; className?: string }) {
-  return (
-    <svg className={className} aria-hidden="true">
-      <use href={`#icon-${name}`} />
-    </svg>
+    <nav>
+      <Logo className="h-8 w-auto text-foreground" aria-label="Home" />
+    </nav>
   );
 }
 ```
 
-### Accessible SVGs
+### SVG Sprite System
+
+Create a single sprite file at `public/icons.svg`:
+
+```xml
+<svg xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <symbol id="icon-arrow" viewBox="0 0 24 24">
+      <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" />
+    </symbol>
+    <symbol id="icon-check" viewBox="0 0 24 24">
+      <path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" />
+    </symbol>
+  </defs>
+</svg>
+```
 
 ```tsx
-// Decorative SVG — hidden from screen readers
-<svg aria-hidden="true" focusable="false" className="h-6 w-6">
-  <use href="#icon-decoration" />
+// components/sprite-icon.tsx
+interface SpriteIconProps {
+  name: string;
+  size?: number;
+  className?: string;
+  label?: string;
+}
+
+export function SpriteIcon({
+  name,
+  size = 24,
+  className,
+  label,
+}: SpriteIconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      className={className}
+      role={label ? "img" : "presentation"}
+      aria-label={label}
+      aria-hidden={!label}
+    >
+      <use href={`/icons.svg#icon-${name}`} />
+    </svg>
+  );
+}
+```
+
+### Animation-Ready SVGs
+
+```tsx
+// components/animated-checkmark.tsx
+"use client";
+
+import { motion } from "framer-motion";
+
+export function AnimatedCheckmark({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      role="img"
+      aria-label="Success"
+    >
+      <motion.circle
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="2"
+        fill="none"
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+      />
+      <motion.path
+        d="M7 13l3 3 7-7"
+        stroke="currentColor"
+        strokeWidth="2"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{ duration: 0.3, delay: 0.4, ease: "easeOut" }}
+      />
+    </svg>
+  );
+}
+```
+
+### SVG Accessibility Patterns
+
+```tsx
+// Decorative SVG — hide from screen readers
+<svg aria-hidden="true" focusable="false">...</svg>
+
+// Informative SVG — provide a label and title
+<svg role="img" aria-label="Downloads chart showing 50% growth">
+  <title>Downloads chart showing 50% growth</title>
+  ...
 </svg>
 
-// Meaningful SVG — with accessible label
-<svg role="img" aria-labelledby="chart-title chart-desc" className="h-64 w-full">
-  <title id="chart-title">Monthly Revenue</title>
-  <desc id="chart-desc">Bar chart showing revenue growth from Jan to Dec 2025</desc>
-  {/* ... chart paths ... */}
-</svg>
+// Interactive SVG — wrap in a labeled button
+<button aria-label="Close dialog">
+  <svg aria-hidden="true" focusable="false">
+    <path d="M6 6l12 12M18 6L6 18" />
+  </svg>
+</button>
 ```
 
 ---
 
-## 5. Image Optimization Pipeline
+## 5. Image Optimization
 
-### Sharp for server-side processing
+### Sharp for Server-Side Processing
 
-```typescript
+```bash
+bun add sharp
+```
+
+```ts
 // lib/image-processing.ts
-import sharp from 'sharp';
-import path from 'node:path';
-import fs from 'node:fs/promises';
+import sharp from "sharp";
 
-interface ProcessOptions {
-  widths: number[];
-  formats: ('webp' | 'avif' | 'png')[];
-  quality?: number;
+export async function optimizeImage(
+  input: Buffer,
+  options: {
+    width?: number;
+    height?: number;
+    format?: "avif" | "webp" | "jpeg";
+    quality?: number;
+  } = {}
+): Promise<Buffer> {
+  const { width, height, format = "webp", quality = 80 } = options;
+
+  let pipeline = sharp(input);
+
+  if (width || height) {
+    pipeline = pipeline.resize(width, height, {
+      fit: "cover",
+      withoutEnlargement: true,
+    });
+  }
+
+  switch (format) {
+    case "avif":
+      pipeline = pipeline.avif({ quality, effort: 4 });
+      break;
+    case "webp":
+      pipeline = pipeline.webp({ quality, effort: 4 });
+      break;
+    case "jpeg":
+      pipeline = pipeline.jpeg({ quality, mozjpeg: true });
+      break;
+  }
+
+  return pipeline.toBuffer();
 }
 
-export async function processImage(
-  inputPath: string,
-  outputDir: string,
-  options: ProcessOptions
-) {
-  const { widths, formats, quality = 80 } = options;
-  const name = path.parse(inputPath).name;
-  await fs.mkdir(outputDir, { recursive: true });
+export async function generateResponsiveSet(
+  input: Buffer,
+  widths: number[] = [640, 750, 828, 1080, 1200, 1920]
+): Promise<Map<number, Buffer>> {
+  const results = new Map<number, Buffer>();
 
-  const results: string[] = [];
-
-  for (const width of widths) {
-    for (const format of formats) {
-      const outputPath = path.join(outputDir, `${name}-${width}.${format}`);
-      await sharp(inputPath)
-        .resize(width)
-        .toFormat(format, { quality })
-        .toFile(outputPath);
-      results.push(outputPath);
-    }
-  }
+  await Promise.all(
+    widths.map(async (w) => {
+      const buf = await optimizeImage(input, { width: w, format: "webp" });
+      results.set(w, buf);
+    })
+  );
 
   return results;
 }
 
-// Usage
-await processImage('uploads/hero.jpg', 'public/images/hero', {
-  widths: [640, 960, 1280, 1920],
-  formats: ['avif', 'webp'],
-  quality: 80,
-});
+export async function getImageMetadata(input: Buffer) {
+  const metadata = await sharp(input).metadata();
+  return {
+    width: metadata.width ?? 0,
+    height: metadata.height ?? 0,
+    format: metadata.format,
+    size: metadata.size,
+    hasAlpha: metadata.hasAlpha ?? false,
+  };
+}
 ```
 
-### Responsive srcset component
+### AVIF/WebP with next/image Config
+
+```ts
+// next.config.ts
+const nextConfig: NextConfig = {
+  images: {
+    formats: ["image/avif", "image/webp"],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
+  },
+};
+```
+
+### Responsive srcset with next/image
 
 ```tsx
-// components/optimized-image.tsx
-interface OptimizedImageProps {
-  src: string; // base name without extension
+// components/responsive-image.tsx
+import Image from "next/image";
+
+interface ResponsiveImageProps {
+  src: string;
   alt: string;
-  widths?: number[];
+  width: number;
+  height: number;
   sizes?: string;
+  priority?: boolean;
   className?: string;
 }
 
-export function OptimizedImage({
+export function ResponsiveImage({
   src,
   alt,
-  widths = [640, 960, 1280, 1920],
-  sizes = '(max-width: 640px) 100vw, (max-width: 1024px) 75vw, 50vw',
+  width,
+  height,
+  sizes = "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw",
+  priority = false,
   className,
-}: OptimizedImageProps) {
-  const avifSrcSet = widths.map((w) => `${src}-${w}.avif ${w}w`).join(', ');
-  const webpSrcSet = widths.map((w) => `${src}-${w}.webp ${w}w`).join(', ');
-
+}: ResponsiveImageProps) {
   return (
-    <picture>
-      <source type="image/avif" srcSet={avifSrcSet} sizes={sizes} />
-      <source type="image/webp" srcSet={webpSrcSet} sizes={sizes} />
-      <img
-        src={`${src}-${widths[widths.length - 1]}.webp`}
-        alt={alt}
-        loading="lazy"
-        decoding="async"
-        className={className}
-      />
-    </picture>
+    <Image
+      src={src}
+      alt={alt}
+      width={width}
+      height={height}
+      sizes={sizes}
+      priority={priority}
+      quality={80}
+      className={className}
+      placeholder="blur"
+      blurDataURL={`data:image/svg+xml;base64,${btoa(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="100%" height="100%" fill="#1a1a1a"/></svg>'
+      )}`}
+    />
   );
 }
 ```
@@ -554,13 +939,14 @@ export function OptimizedImage({
 
 ## 6. Content Images
 
-### MDX images with next/image
+### MDX with next/image
 
 ```tsx
-// components/mdx-image.tsx
-import Image from 'next/image';
+// components/mdx/mdx-image.tsx
+import Image from "next/image";
+import { getPlaiceholder } from "plaiceholder";
 
-interface MDXImageProps {
+interface MdxImageProps {
   src: string;
   alt: string;
   width?: number;
@@ -568,7 +954,25 @@ interface MDXImageProps {
   caption?: string;
 }
 
-export function MDXImage({ src, alt, width = 800, height = 450, caption }: MDXImageProps) {
+export async function MdxImage({
+  src,
+  alt,
+  width = 800,
+  height = 450,
+  caption,
+}: MdxImageProps) {
+  let blurDataURL: string | undefined;
+
+  try {
+    const buffer = await fetch(src).then(async (res) =>
+      Buffer.from(await res.arrayBuffer())
+    );
+    const { base64 } = await getPlaiceholder(buffer, { size: 10 });
+    blurDataURL = base64;
+  } catch {
+    // Fallback: no blur placeholder
+  }
+
   return (
     <figure className="my-8">
       <Image
@@ -577,11 +981,11 @@ export function MDXImage({ src, alt, width = 800, height = 450, caption }: MDXIm
         width={width}
         height={height}
         className="rounded-lg"
-        placeholder="blur"
-        blurDataURL={`/_next/image?url=${encodeURIComponent(src)}&w=16&q=10`}
+        placeholder={blurDataURL ? "blur" : "empty"}
+        blurDataURL={blurDataURL}
       />
       {caption && (
-        <figcaption className="mt-2 text-center text-sm text-slate-500">
+        <figcaption className="mt-2 text-center text-sm text-muted-foreground">
           {caption}
         </figcaption>
       )}
@@ -590,56 +994,149 @@ export function MDXImage({ src, alt, width = 800, height = 450, caption }: MDXIm
 }
 ```
 
-### Generate blur placeholder
+### MDX Component Override
 
-```typescript
-// lib/blur-placeholder.ts
-import sharp from 'sharp';
+```tsx
+// lib/mdx-components.tsx
+import type { MDXComponents } from "mdx/types";
+import Image from "next/image";
 
-export async function generateBlurDataURL(imagePath: string): Promise<string> {
-  const buffer = await sharp(imagePath)
-    .resize(10, 10, { fit: 'inside' })
-    .blur()
-    .toBuffer();
-  return `data:image/png;base64,${buffer.toString('base64')}`;
+export function useMDXComponents(components: MDXComponents): MDXComponents {
+  return {
+    ...components,
+    img: ({ src, alt, ...props }) => {
+      if (!src) return null;
+      return (
+        <Image
+          src={src}
+          alt={alt ?? ""}
+          width={800}
+          height={450}
+          className="my-6 rounded-lg"
+          sizes="(max-width: 768px) 100vw, 800px"
+          {...props}
+        />
+      );
+    },
+  };
 }
 ```
 
-### Art direction with picture element
+### Blur Placeholder Generation at Build Time
+
+```ts
+// lib/blur-placeholder.ts
+import { getPlaiceholder } from "plaiceholder";
+import fs from "node:fs/promises";
+import path from "node:path";
+
+export async function getBlurPlaceholder(
+  imagePath: string
+): Promise<string> {
+  const isRemote = imagePath.startsWith("http");
+  let buffer: Buffer;
+
+  if (isRemote) {
+    buffer = Buffer.from(await (await fetch(imagePath)).arrayBuffer());
+  } else {
+    const fullPath = path.join(process.cwd(), "public", imagePath);
+    buffer = await fs.readFile(fullPath);
+  }
+
+  const { base64 } = await getPlaiceholder(buffer, { size: 10 });
+  return base64;
+}
+```
+
+### Art Direction with `<picture>`
 
 ```tsx
-export function HeroBanner({ alt }: { alt: string }) {
+// components/art-directed-image.tsx
+interface ArtDirectedImageProps {
+  mobile: { src: string; width: number; height: number };
+  tablet: { src: string; width: number; height: number };
+  desktop: { src: string; width: number; height: number };
+  alt: string;
+}
+
+export function ArtDirectedImage({
+  mobile,
+  tablet,
+  desktop,
+  alt,
+}: ArtDirectedImageProps) {
   return (
     <picture>
-      {/* Mobile: cropped portrait */}
       <source
-        media="(max-width: 639px)"
-        srcSet="/images/hero-mobile.avif"
-        type="image/avif"
+        media="(min-width: 1024px)"
+        srcSet={desktop.src}
+        width={desktop.width}
+        height={desktop.height}
       />
       <source
-        media="(max-width: 639px)"
-        srcSet="/images/hero-mobile.webp"
-        type="image/webp"
+        media="(min-width: 640px)"
+        srcSet={tablet.src}
+        width={tablet.width}
+        height={tablet.height}
       />
-      {/* Tablet */}
-      <source
-        media="(max-width: 1023px)"
-        srcSet="/images/hero-tablet.avif"
-        type="image/avif"
-      />
-      {/* Desktop: full landscape */}
-      <source
-        srcSet="/images/hero-desktop.avif"
-        type="image/avif"
-      />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/images/hero-desktop.webp"
+        src={mobile.src}
         alt={alt}
-        className="h-[60vh] w-full object-cover"
-        fetchPriority="high"
+        width={mobile.width}
+        height={mobile.height}
+        loading="lazy"
+        decoding="async"
+        className="h-auto w-full rounded-lg"
       />
     </picture>
+  );
+}
+```
+
+### CMS Image with Responsive Variants
+
+```tsx
+// components/cms-image.tsx
+import Image from "next/image";
+import { getBlurPlaceholder } from "@/lib/blur-placeholder";
+
+interface CMSImageProps {
+  src: string;
+  alt: string;
+  aspectRatio?: "16/9" | "4/3" | "1/1" | "3/2";
+  priority?: boolean;
+}
+
+const aspectDimensions = {
+  "16/9": { width: 1200, height: 675 },
+  "4/3": { width: 1200, height: 900 },
+  "1/1": { width: 1200, height: 1200 },
+  "3/2": { width: 1200, height: 800 },
+};
+
+export async function CMSImage({
+  src,
+  alt,
+  aspectRatio = "16/9",
+  priority = false,
+}: CMSImageProps) {
+  const { width, height } = aspectDimensions[aspectRatio];
+  const blurDataURL = await getBlurPlaceholder(src);
+
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      width={width}
+      height={height}
+      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 50vw"
+      priority={priority}
+      placeholder="blur"
+      blurDataURL={blurDataURL}
+      className="rounded-lg object-cover"
+      style={{ aspectRatio }}
+    />
   );
 }
 ```
@@ -648,21 +1145,36 @@ export function HeroBanner({ alt }: { alt: string }) {
 
 ## 7. Icons
 
-### Icon component wrapper (Phosphor / Tabler / Iconoir)
+### Recommended Libraries
+
+| Library | Style | Bundle | Install |
+|---------|-------|--------|---------|
+| **Phosphor** | Versatile, 6 weights | Tree-shakeable | `@phosphor-icons/react` |
+| **Tabler** | Clean line icons | Tree-shakeable | `@tabler/icons-react` |
+| **Iconoir** | Minimal, consistent | Tree-shakeable | `iconoir-react` |
+
+### Setup and Tree-Shaking
 
 ```bash
-# Pick one:
-npm install @phosphor-icons/react     # 9000+ icons, 6 weights
-npm install @tabler/icons-react       # 5400+ icons
-npm install iconoir-react             # 1600+ icons
+bun add @phosphor-icons/react
 ```
 
 ```tsx
-// components/ui/icon.tsx
-import type { ComponentPropsWithoutRef } from 'react';
-import type { Icon as PhosphorIcon } from '@phosphor-icons/react';
+// Always import individual icons — never the barrel export
+import { ArrowRight, Check, X } from "@phosphor-icons/react";
 
-type IconSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+// NEVER do this — kills tree-shaking and bloats the bundle:
+// import * as Icons from "@phosphor-icons/react";
+```
+
+### Custom Icon Wrapper
+
+```tsx
+// components/ui/icon.tsx
+import type { ComponentProps, ElementType } from "react";
+import { cn } from "@/lib/utils";
+
+type IconSize = "xs" | "sm" | "md" | "lg" | "xl";
 
 const sizeMap: Record<IconSize, number> = {
   xs: 14,
@@ -672,19 +1184,29 @@ const sizeMap: Record<IconSize, number> = {
   xl: 32,
 };
 
-interface IconProps extends Omit<ComponentPropsWithoutRef<'svg'>, 'children'> {
-  icon: PhosphorIcon;
+interface IconProps {
+  icon: ElementType;
   size?: IconSize;
-  label?: string; // accessible label
+  className?: string;
+  label?: string;
 }
 
-export function Icon({ icon: IconComponent, size = 'md', label, ...props }: IconProps) {
+export function Icon({
+  icon: IconComponent,
+  size = "md",
+  className,
+  label,
+  ...props
+}: IconProps & Omit<ComponentProps<"svg">, "ref">) {
+  const px = sizeMap[size];
+
   return (
     <IconComponent
-      size={sizeMap[size]}
+      size={px}
+      className={cn("shrink-0", className)}
       aria-hidden={!label}
       aria-label={label}
-      role={label ? 'img' : undefined}
+      role={label ? "img" : "presentation"}
       {...props}
     />
   );
@@ -693,183 +1215,266 @@ export function Icon({ icon: IconComponent, size = 'md', label, ...props }: Icon
 
 ```tsx
 // Usage
-import { ArrowRight, Check, Warning } from '@phosphor-icons/react';
-import { Icon } from '@/components/ui/icon';
+import { ArrowRight, Check } from "@phosphor-icons/react";
+import { Icon } from "@/components/ui/icon";
 
-<Icon icon={ArrowRight} size="md" />
-<Icon icon={Warning} size="lg" label="Warning" className="text-amber-500" />
+<Icon icon={ArrowRight} size="sm" />
+<Icon icon={Check} size="md" label="Completed" className="text-green-500" />
 ```
 
-### Tree-shaking (automatic with named imports)
+### Consistent Sizing Rules
+
+```
+xs (14px) — inline with small text, badges
+sm (16px) — inline with body text, table cells
+md (20px) — buttons, nav items, form fields (default)
+lg (24px) — section headers, feature cards
+xl (32px) — hero sections, empty states
+```
+
+### Icon Button Pattern
 
 ```tsx
-// GOOD — only imports ArrowRight (tree-shakeable)
-import { ArrowRight } from '@phosphor-icons/react';
+// components/ui/icon-button.tsx
+import { cn } from "@/lib/utils";
+import type { ElementType, ButtonHTMLAttributes } from "react";
+import { Icon, type IconSize } from "./icon";
 
-// BAD — imports entire library
-import * as Icons from '@phosphor-icons/react';
+interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  icon: ElementType;
+  label: string;
+  size?: IconSize;
+  variant?: "ghost" | "outline" | "solid";
+}
+
+export function IconButton({
+  icon,
+  label,
+  size = "md",
+  variant = "ghost",
+  className,
+  ...props
+}: IconButtonProps) {
+  return (
+    <button
+      aria-label={label}
+      className={cn(
+        "inline-flex items-center justify-center rounded-md transition-colors",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        {
+          ghost: "hover:bg-accent hover:text-accent-foreground",
+          outline: "border hover:bg-accent",
+          solid: "bg-primary text-primary-foreground hover:bg-primary/90",
+        }[variant],
+        {
+          xs: "h-6 w-6",
+          sm: "h-7 w-7",
+          md: "h-9 w-9",
+          lg: "h-10 w-10",
+          xl: "h-12 w-12",
+        }[size],
+        className
+      )}
+      {...props}
+    >
+      <Icon icon={icon} size={size} />
+    </button>
+  );
+}
 ```
 
 ---
 
 ## 8. Audio
 
-### Audio player component
+### Audio Player Component
 
 ```tsx
-'use client';
+// components/audio-player.tsx
+"use client";
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from "react";
 
 interface AudioPlayerProps {
   src: string;
   title: string;
+  subtitle?: string;
 }
 
-export function AudioPlayer({ src, title }: AudioPlayerProps) {
+export function AudioPlayer({ src, title, subtitle }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [playbackRate, setPlaybackRate] = useState(1);
 
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const updateProgress = () => setProgress(audio.currentTime);
-    const setDur = () => setDuration(audio.duration);
-    const onEnded = () => setIsPlaying(false);
+    const onLoaded = () => setDuration(audio.duration);
+    const onTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const onEnded = () => setPlaying(false);
 
-    audio.addEventListener('timeupdate', updateProgress);
-    audio.addEventListener('loadedmetadata', setDur);
-    audio.addEventListener('ended', onEnded);
+    audio.addEventListener("loadedmetadata", onLoaded);
+    audio.addEventListener("timeupdate", onTimeUpdate);
+    audio.addEventListener("ended", onEnded);
 
     return () => {
-      audio.removeEventListener('timeupdate', updateProgress);
-      audio.removeEventListener('loadedmetadata', setDur);
-      audio.removeEventListener('ended', onEnded);
+      audio.removeEventListener("loadedmetadata", onLoaded);
+      audio.removeEventListener("timeupdate", onTimeUpdate);
+      audio.removeEventListener("ended", onEnded);
     };
   }, []);
 
-  function togglePlay() {
-    if (!audioRef.current) return;
-    if (isPlaying) {
-      audioRef.current.pause();
+  const togglePlay = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) {
+      audio.pause();
     } else {
-      audioRef.current.play();
+      audio.play();
     }
-    setIsPlaying(!isPlaying);
-  }
+    setPlaying((p) => !p);
+  }, [playing]);
 
-  function seek(e: React.ChangeEvent<HTMLInputElement>) {
+  const seek = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const audio = audioRef.current;
+    if (!audio) return;
     const time = Number(e.target.value);
-    if (audioRef.current) audioRef.current.currentTime = time;
-    setProgress(time);
-  }
+    audio.currentTime = time;
+    setCurrentTime(time);
+  }, []);
 
-  function formatTime(s: number) {
+  const cycleRate = useCallback(() => {
+    const rates = [1, 1.25, 1.5, 1.75, 2];
+    const next = rates[(rates.indexOf(playbackRate) + 1) % rates.length];
+    if (audioRef.current) audioRef.current.playbackRate = next;
+    setPlaybackRate(next);
+  }, [playbackRate]);
+
+  const skip = useCallback(
+    (seconds: number) => {
+      const audio = audioRef.current;
+      if (!audio) return;
+      audio.currentTime = Math.max(
+        0,
+        Math.min(audio.currentTime + seconds, duration)
+      );
+    },
+    [duration]
+  );
+
+  function formatTime(s: number): string {
+    if (!isFinite(s)) return "0:00";
     const m = Math.floor(s / 60);
     const sec = Math.floor(s % 60);
-    return `${m}:${sec.toString().padStart(2, '0')}`;
+    return `${m}:${sec.toString().padStart(2, "0")}`;
   }
 
   return (
-    <div className="flex items-center gap-4 rounded-xl bg-slate-100 p-4 dark:bg-slate-800">
+    <div className="rounded-xl border bg-card p-4">
       <audio ref={audioRef} src={src} preload="metadata" />
-      <button
-        onClick={togglePlay}
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white"
-        aria-label={isPlaying ? 'Pause' : 'Play'}
-      >
-        {isPlaying ? '||' : '\u25B6'}
-      </button>
-      <div className="flex flex-1 flex-col gap-1">
-        <span className="text-sm font-medium">{title}</span>
+      <div className="mb-3">
+        <p className="text-sm font-medium">{title}</p>
+        {subtitle && (
+          <p className="text-xs text-muted-foreground">{subtitle}</p>
+        )}
+      </div>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => skip(-15)}
+          className="text-xs text-muted-foreground hover:text-foreground"
+          aria-label="Rewind 15 seconds"
+        >
+          -15s
+        </button>
+        <button
+          onClick={togglePlay}
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground"
+          aria-label={playing ? "Pause" : "Play"}
+        >
+          {playing ? "\u23F8" : "\u25B6"}
+        </button>
+        <button
+          onClick={() => skip(30)}
+          className="text-xs text-muted-foreground hover:text-foreground"
+          aria-label="Forward 30 seconds"
+        >
+          +30s
+        </button>
         <input
           type="range"
           min={0}
           max={duration || 0}
-          value={progress}
+          value={currentTime}
           onChange={seek}
-          className="w-full accent-indigo-600"
+          className="flex-1"
           aria-label="Seek"
         />
+        <span className="text-xs tabular-nums text-muted-foreground">
+          {formatTime(currentTime)} / {formatTime(duration)}
+        </span>
+        <button
+          onClick={cycleRate}
+          className="rounded border px-2 py-0.5 text-xs"
+          aria-label={`Playback speed ${playbackRate}x`}
+        >
+          {playbackRate}x
+        </button>
       </div>
-      <span className="text-xs text-slate-500">
-        {formatTime(progress)} / {formatTime(duration)}
-      </span>
     </div>
   );
 }
 ```
 
-### Podcast embedding
+### Podcast Embedding
 
 ```tsx
-export function PodcastEmbed({ episodeUrl }: { episodeUrl: string }) {
-  // Spotify
-  if (episodeUrl.includes('spotify.com')) {
-    const embedUrl = episodeUrl.replace('/episode/', '/embed/episode/');
+// components/podcast-embed.tsx
+interface PodcastEmbedProps {
+  platform: "spotify" | "apple";
+  showId: string;
+  episodeId?: string;
+  theme?: "light" | "dark";
+}
+
+export function PodcastEmbed({
+  platform,
+  showId,
+  episodeId,
+  theme = "dark",
+}: PodcastEmbedProps) {
+  if (platform === "spotify") {
+    const type = episodeId ? "episode" : "show";
+    const id = episodeId ?? showId;
     return (
       <iframe
-        src={embedUrl}
+        src={`https://open.spotify.com/embed/${type}/${id}?theme=${theme === "dark" ? 0 : 1}`}
         width="100%"
-        height="232"
-        allow="encrypted-media"
+        height={episodeId ? 152 : 352}
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
         loading="lazy"
         className="rounded-xl"
-        title="Spotify episode"
+        title="Spotify podcast player"
       />
     );
   }
 
   // Apple Podcasts
-  if (episodeUrl.includes('podcasts.apple.com')) {
-    const embedUrl = episodeUrl.replace('podcasts.apple.com', 'embed.podcasts.apple.com');
-    return (
-      <iframe
-        src={embedUrl}
-        height="175"
-        width="100%"
-        allow="autoplay"
-        loading="lazy"
-        className="rounded-xl"
-        title="Apple Podcasts episode"
-      />
-    );
-  }
-
-  return <AudioPlayer src={episodeUrl} title="Podcast Episode" />;
-}
-```
-
-### Web Audio API basics
-
-```typescript
-// lib/audio-utils.ts
-export function createAudioAnalyzer(audioElement: HTMLAudioElement) {
-  const ctx = new AudioContext();
-  const source = ctx.createMediaElementSource(audioElement);
-  const analyser = ctx.createAnalyser();
-  analyser.fftSize = 256;
-
-  source.connect(analyser);
-  analyser.connect(ctx.destination);
-
-  const bufferLength = analyser.frequencyBinCount;
-  const dataArray = new Uint8Array(bufferLength);
-
-  return {
-    getFrequencyData() {
-      analyser.getByteFrequencyData(dataArray);
-      return dataArray;
-    },
-    getWaveformData() {
-      analyser.getByteTimeDomainData(dataArray);
-      return dataArray;
-    },
-    bufferLength,
-  };
+  const path = episodeId ? `${showId}?i=${episodeId}` : showId;
+  return (
+    <iframe
+      src={`https://embed.podcasts.apple.com/podcast/id${path}&theme=${theme}`}
+      width="100%"
+      height={episodeId ? 175 : 450}
+      allow="autoplay"
+      loading="lazy"
+      className="rounded-xl"
+      title="Apple Podcasts player"
+      sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-top-navigation-by-user-activation"
+    />
+  );
 }
 ```
 
@@ -877,100 +1482,190 @@ export function createAudioAnalyzer(audioElement: HTMLAudioElement) {
 
 ## 9. File Type Detection
 
-### Magic bytes validation
+### Magic Bytes Validation
 
-```typescript
+```ts
 // lib/file-validation.ts
-const MAGIC_BYTES: Record<string, number[][]> = {
-  'image/png': [[0x89, 0x50, 0x4e, 0x47]],
-  'image/jpeg': [[0xff, 0xd8, 0xff]],
-  'image/gif': [[0x47, 0x49, 0x46, 0x38]],
-  'image/webp': [[0x52, 0x49, 0x46, 0x46]], // RIFF, check also bytes 8-11 for WEBP
-  'image/avif': [], // ftyp box — check bytes 4-8 for 'ftyp'
-  'application/pdf': [[0x25, 0x50, 0x44, 0x46]], // %PDF
-  'image/svg+xml': [[0x3c, 0x73, 0x76, 0x67], [0x3c, 0x3f, 0x78, 0x6d]], // <svg or <?xm
+
+const MAGIC_BYTES: Record<string, { bytes: number[]; offset?: number }[]> = {
+  "image/jpeg": [{ bytes: [0xff, 0xd8, 0xff] }],
+  "image/png": [
+    { bytes: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a] },
+  ],
+  "image/gif": [{ bytes: [0x47, 0x49, 0x46, 0x38] }],
+  "image/webp": [{ bytes: [0x52, 0x49, 0x46, 0x46], offset: 0 }],
+  "image/avif": [{ bytes: [0x00, 0x00, 0x00], offset: 0 }],
+  "image/svg+xml": [{ bytes: [0x3c, 0x3f, 0x78, 0x6d, 0x6c] }], // <?xml
+  "application/pdf": [{ bytes: [0x25, 0x50, 0x44, 0x46] }], // %PDF
+  "audio/mpeg": [{ bytes: [0x49, 0x44, 0x33] }], // ID3
+  "video/mp4": [{ bytes: [0x66, 0x74, 0x79, 0x70], offset: 4 }], // ftyp
 };
 
-export function detectFileType(buffer: ArrayBuffer): string | null {
-  const bytes = new Uint8Array(buffer.slice(0, 12));
+export function detectMimeType(buffer: ArrayBuffer): string | null {
+  const view = new Uint8Array(buffer);
 
-  for (const [mimeType, signatures] of Object.entries(MAGIC_BYTES)) {
+  for (const [mime, signatures] of Object.entries(MAGIC_BYTES)) {
     for (const sig of signatures) {
-      if (sig.every((byte, i) => bytes[i] === byte)) {
-        return mimeType;
-      }
+      const offset = sig.offset ?? 0;
+      const match = sig.bytes.every(
+        (byte, i) => view[offset + i] === byte
+      );
+      if (match) return mime;
     }
   }
 
   return null;
 }
+
+export function isSVG(buffer: ArrayBuffer): boolean {
+  const text = new TextDecoder().decode(buffer.slice(0, 500));
+  return text.includes("<svg") || text.startsWith("<?xml");
+}
 ```
 
-### Secure upload validation
+### MIME Checking Utility
 
-```typescript
-// app/api/upload/route.ts
-import { NextResponse, type NextRequest } from 'next/server';
-import { detectFileType } from '@/lib/file-validation';
+```ts
+// lib/mime.ts
 
-const ALLOWED_TYPES = new Set([
-  'image/png',
-  'image/jpeg',
-  'image/webp',
-  'image/avif',
-  'application/pdf',
+const EXTENSION_TO_MIME: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  gif: "image/gif",
+  webp: "image/webp",
+  avif: "image/avif",
+  svg: "image/svg+xml",
+  mp4: "video/mp4",
+  webm: "video/webm",
+  mp3: "audio/mpeg",
+  wav: "audio/wav",
+  ogg: "audio/ogg",
+  pdf: "application/pdf",
+  woff2: "font/woff2",
+  woff: "font/woff",
+};
+
+export function mimeFromExtension(filename: string): string | null {
+  const ext = filename.split(".").pop()?.toLowerCase();
+  return ext ? EXTENSION_TO_MIME[ext] ?? null : null;
+}
+
+export function extensionFromMime(mime: string): string | null {
+  for (const [ext, m] of Object.entries(EXTENSION_TO_MIME)) {
+    if (m === mime) return ext;
+  }
+  return null;
+}
+```
+
+### Secure Upload Validation
+
+```ts
+// lib/upload-validator.ts
+import { detectMimeType, isSVG } from "./file-validation";
+import { mimeFromExtension } from "./mime";
+
+interface ValidationResult {
+  valid: boolean;
+  mime: string | null;
+  error?: string;
+}
+
+const ALLOWED_IMAGE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/avif",
+  "image/gif",
 ]);
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
-export async function POST(request: NextRequest) {
+export async function validateUpload(
+  file: File,
+  options: {
+    allowedTypes?: Set<string>;
+    maxSize?: number;
+    allowSvg?: boolean;
+  } = {}
+): Promise<ValidationResult> {
+  const {
+    allowedTypes = ALLOWED_IMAGE_TYPES,
+    maxSize = MAX_FILE_SIZE,
+    allowSvg = false,
+  } = options;
+
+  // 1. Size check
+  if (file.size > maxSize) {
+    return {
+      valid: false,
+      mime: null,
+      error: `File exceeds maximum size of ${Math.round(maxSize / 1024 / 1024)}MB`,
+    };
+  }
+
+  // 2. Read header bytes for magic number detection
+  const headerSlice = await file.slice(0, 16).arrayBuffer();
+  const detectedMime = detectMimeType(headerSlice);
+
+  // 3. SVG special case (text-based, needs sanitization before use)
+  if (!detectedMime && allowSvg) {
+    const fullBuffer = await file.arrayBuffer();
+    if (isSVG(fullBuffer)) {
+      return { valid: true, mime: "image/svg+xml" };
+    }
+  }
+
+  // 4. Verify detected MIME is in the allowed list
+  if (!detectedMime || !allowedTypes.has(detectedMime)) {
+    return {
+      valid: false,
+      mime: detectedMime,
+      error: `File type ${detectedMime ?? "unknown"} is not allowed`,
+    };
+  }
+
+  // 5. Cross-check file extension vs detected magic bytes
+  const extensionMime = mimeFromExtension(file.name);
+  if (extensionMime && extensionMime !== detectedMime) {
+    return {
+      valid: false,
+      mime: detectedMime,
+      error: `Extension mismatch: .${file.name.split(".").pop()} does not match detected type ${detectedMime}`,
+    };
+  }
+
+  return { valid: true, mime: detectedMime };
+}
+```
+
+### Server-Side Upload Route
+
+```ts
+// app/api/upload/route.ts
+import { NextResponse } from "next/server";
+import { validateUpload } from "@/lib/upload-validator";
+
+export async function POST(request: Request) {
   const formData = await request.formData();
-  const file = formData.get('file') as File | null;
+  const file = formData.get("file") as File | null;
 
   if (!file) {
-    return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    return NextResponse.json({ error: "No file provided" }, { status: 400 });
   }
 
-  // 1. Check size
-  if (file.size > MAX_FILE_SIZE) {
-    return NextResponse.json({ error: 'File too large' }, { status: 413 });
+  const validation = await validateUpload(file);
+
+  if (!validation.valid) {
+    return NextResponse.json({ error: validation.error }, { status: 400 });
   }
 
-  // 2. Check declared MIME type
-  if (!ALLOWED_TYPES.has(file.type)) {
-    return NextResponse.json({ error: 'File type not allowed' }, { status: 415 });
-  }
+  // Proceed with upload to Supabase Storage / S3 / etc.
+  const buffer = Buffer.from(await file.arrayBuffer());
+  // ... upload logic here
 
-  // 3. Validate magic bytes (don't trust Content-Type alone)
-  const buffer = await file.arrayBuffer();
-  const detectedType = detectFileType(buffer);
-
-  if (!detectedType || !ALLOWED_TYPES.has(detectedType)) {
-    return NextResponse.json(
-      { error: 'File content does not match allowed types' },
-      { status: 415 }
-    );
-  }
-
-  // 4. Check extension matches detected type
-  const ext = file.name.split('.').pop()?.toLowerCase();
-  const validExtensions: Record<string, string[]> = {
-    'image/png': ['png'],
-    'image/jpeg': ['jpg', 'jpeg'],
-    'image/webp': ['webp'],
-    'image/avif': ['avif'],
-    'application/pdf': ['pdf'],
-  };
-
-  if (!ext || !validExtensions[detectedType]?.includes(ext)) {
-    return NextResponse.json(
-      { error: 'File extension does not match content' },
-      { status: 415 }
-    );
-  }
-
-  // Proceed with upload...
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, mime: validation.mime });
 }
 ```
 
@@ -978,122 +1673,184 @@ export async function POST(request: NextRequest) {
 
 ## 10. CDN Strategy
 
-### Vercel Image Optimization (built-in)
+### Vercel Image Optimization (Default)
 
-```typescript
-// next.config.ts
+```ts
+// next.config.ts — automatic when deploying on Vercel
 const nextConfig: NextConfig = {
   images: {
-    formats: ['image/avif', 'image/webp'],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**.supabase.co',
-        pathname: '/storage/v1/object/public/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-      },
+      { protocol: "https", hostname: "**.supabase.co" },
+      { protocol: "https", hostname: "images.unsplash.com" },
     ],
-    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
+    minimumCacheTTL: 2592000, // 30 days
   },
 };
 ```
 
+Usage is automatic via `next/image`:
+
+```tsx
+import Image from "next/image";
+
+<Image
+  src="https://yourproject.supabase.co/storage/v1/object/public/images/hero.jpg"
+  alt="Hero"
+  width={1200}
+  height={630}
+/>
+```
+
+### Cloudflare Images
+
+```ts
+// lib/cdn/cloudflare.ts
+const CF_ACCOUNT_HASH = process.env.CLOUDFLARE_ACCOUNT_HASH!;
+
+type CfVariant = "public" | "thumbnail" | "avatar" | "og";
+
+export function cfImageUrl(
+  imageId: string,
+  variant: CfVariant = "public"
+): string {
+  return `https://imagedelivery.net/${CF_ACCOUNT_HASH}/${imageId}/${variant}`;
+}
+
+// Flexible transforms (requires Cloudflare Images with transformations enabled)
+export function cfTransformUrl(
+  originalUrl: string,
+  options: {
+    width?: number;
+    height?: number;
+    fit?: "scale-down" | "contain" | "cover" | "crop";
+    quality?: number;
+    format?: "auto" | "avif" | "webp";
+  }
+): string {
+  const params = Object.entries(options)
+    .filter(([, v]) => v !== undefined)
+    .map(([k, v]) => `${k}=${v}`)
+    .join(",");
+
+  return `/cdn-cgi/image/${params}/${originalUrl}`;
+}
+```
+
 ### Supabase Storage CDN
 
-```typescript
-// lib/storage.ts
-import { createClient } from '@supabase/supabase-js';
+```ts
+// lib/cdn/supabase-storage.ts
+import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-export function getPublicUrl(bucket: string, path: string) {
+export function getPublicUrl(bucket: string, path: string): string {
   const { data } = supabase.storage.from(bucket).getPublicUrl(path);
   return data.publicUrl;
 }
 
-// With transformation (Supabase Pro plan)
-export function getTransformedUrl(bucket: string, path: string, width: number, height: number) {
-  const { data } = supabase.storage.from(bucket).getPublicUrl(path, {
-    transform: { width, height, quality: 80, format: 'origin' },
-  });
+// With Supabase Image Transformation (requires Pro plan)
+export function getTransformedUrl(
+  bucket: string,
+  path: string,
+  options: {
+    width?: number;
+    height?: number;
+    quality?: number;
+    format?: "origin";
+  } = {}
+): string {
+  const { data } = supabase.storage
+    .from(bucket)
+    .getPublicUrl(path, { transform: options });
   return data.publicUrl;
 }
-```
 
-### Cloudflare Images integration
+// Upload with optimized cache headers
+export async function uploadImage(
+  bucket: string,
+  path: string,
+  file: File
+): Promise<string> {
+  const { error } = await supabase.storage.from(bucket).upload(path, file, {
+    cacheControl: "public, max-age=31536000, immutable",
+    contentType: file.type,
+    upsert: false,
+  });
 
-```typescript
-// lib/cloudflare-images.ts
-const CF_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID!;
-const CF_API_TOKEN = process.env.CLOUDFLARE_IMAGES_TOKEN!;
-
-export async function uploadToCloudflare(file: File) {
-  const form = new FormData();
-  form.append('file', file);
-
-  const response = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/images/v1`,
-    {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${CF_API_TOKEN}` },
-      body: form,
-    }
-  );
-
-  const data = await response.json();
-  return data.result.id;
-}
-
-// Serve with variants
-export function cloudflareImageUrl(imageId: string, variant = 'public') {
-  return `https://imagedelivery.net/${CF_ACCOUNT_ID}/${imageId}/${variant}`;
+  if (error) throw error;
+  return getPublicUrl(bucket, path);
 }
 ```
 
-### Cache headers for static assets
+### CDN Selection Guide
 
-```typescript
+| Use Case | Recommended | Why |
+|----------|-------------|-----|
+| Standard Next.js on Vercel | Vercel Image Optimization | Zero config, automatic AVIF/WebP |
+| High-volume image-heavy (e-commerce) | Cloudflare Images | Per-image pricing, global PoPs, flexible variants |
+| App with Supabase backend | Supabase Storage + Vercel loader | Single ecosystem, RLS on storage |
+| User-uploaded content | Supabase Storage (upload) + Vercel/CF (delivery) | Secure upload with optimized delivery |
+| Static marketing site | Vercel + `public/` folder | Simplest setup, CDN-cached automatically |
+
+### Custom Image Loader for External CDN
+
+```ts
+// lib/image-loader.ts
+import type { ImageLoaderProps } from "next/image";
+
+export function supabaseLoader({
+  src,
+  width,
+  quality,
+}: ImageLoaderProps): string {
+  const url = new URL(src);
+  url.searchParams.set("width", width.toString());
+  url.searchParams.set("quality", (quality ?? 75).toString());
+  return url.toString();
+}
+```
+
+```ts
 // next.config.ts
 const nextConfig: NextConfig = {
-  async headers() {
-    return [
-      {
-        source: '/images/:path*',
-        headers: [
-          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
-        ],
-      },
-      {
-        source: '/fonts/:path*',
-        headers: [
-          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
-        ],
-      },
-      {
-        source: '/videos/:path*',
-        headers: [
-          { key: 'Cache-Control', value: 'public, max-age=86400, stale-while-revalidate=604800' },
-        ],
-      },
-    ];
+  images: {
+    loader: "custom",
+    loaderFile: "./lib/image-loader.ts",
   },
 };
 ```
 
-### CDN decision matrix
+### Cache Headers for Self-Hosted Media
 
-| Asset Type | Recommendation | Why |
-|---|---|---|
-| App images (next/image) | Vercel built-in | Zero config, auto AVIF/WebP, edge caching |
-| User uploads | Supabase Storage | RLS integration, signed URLs, transformations (Pro) |
-| High-volume public media | Cloudflare Images | Cheapest at scale, global edge, flexible variants |
-| Video | Cloudflare Stream or Mux | Adaptive bitrate, analytics, global delivery |
-| Static assets (fonts, icons) | Vercel / self-hosted + immutable headers | Small files, long cache lifetime |
+```ts
+// middleware.ts
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Aggressive caching for static media assets
+  if (
+    pathname.match(
+      /\.(jpg|jpeg|png|webp|avif|gif|svg|ico|mp4|webm|mp3|woff2)$/
+    )
+  ) {
+    const response = NextResponse.next();
+    response.headers.set(
+      "Cache-Control",
+      "public, max-age=31536000, immutable"
+    );
+    return response;
+  }
+}
+
+export const config = {
+  matcher: ["/media/:path*", "/fonts/:path*"],
+};
+```

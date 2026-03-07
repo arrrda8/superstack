@@ -1,5 +1,18 @@
 # Git Workflow & Project Setup
 
+## Table of Contents
+- [1. Conventional Commits](#1-conventional-commits)
+- [2. Commit Convention Enforcement](#2-commit-convention-enforcement)
+- [3. Changelog Automation](#3-changelog-automation)
+  - [Option A: semantic-release (recommended for single packages)](#option-a-semantic-release-recommended-for-single-packages)
+  - [Option B: Changesets (for monorepos)](#option-b-changesets-for-monorepos)
+- [4. Branch Strategy](#4-branch-strategy)
+  - [Trunk-Based (solo / small team) — RECOMMENDED](#trunk-based-solo--small-team--recommended)
+  - [Git Flow (larger teams)](#git-flow-larger-teams)
+- [5. README Template](#5-readme-template)
+- [6. `.env.example` Template](#6-envexample-template)
+- [7. Branch Protection Rules](#7-branch-protection-rules)
+
 ## 1. Conventional Commits
 
 **Format:** `type(scope): description`

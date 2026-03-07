@@ -1,8 +1,59 @@
-# Conversion Patterns
+# Conversion Optimization Patterns
+
+## Table of Contents
+- [1. Social Proof](#1-social-proof)
+  - [Testimonial card](#testimonial-card)
+  - [Logo bar](#logo-bar)
+  - [Aggregate review widget](#aggregate-review-widget)
+  - [Live user count / activity indicator](#live-user-count--activity-indicator)
+- [2. Trust Signals](#2-trust-signals)
+  - [Security badges row](#security-badges-row)
+  - [Press mentions / "As seen in"](#press-mentions--as-seen-in)
+  - [Money-back guarantee badge](#money-back-guarantee-badge)
+- [3. Pricing Psychology](#3-pricing-psychology)
+  - [Anchoring — show expensive first](#anchoring--show-expensive-first)
+  - [Decoy pricing](#decoy-pricing)
+  - [Annual vs monthly toggle](#annual-vs-monthly-toggle)
+  - [Pricing card with "Most popular" badge + anchoring](#pricing-card-with-most-popular-badge--anchoring)
+- [4. CTA Optimization](#4-cta-optimization)
+  - [Button copy principles](#button-copy-principles)
+  - [Good vs bad CTA examples](#good-vs-bad-cta-examples)
+  - [Above and below fold placement](#above-and-below-fold-placement)
+  - [Ethical urgency](#ethical-urgency)
+- [5. Landing Page Structure](#5-landing-page-structure)
+  - [Proven high-converting layout](#proven-high-converting-layout)
+  - [Hero section template](#hero-section-template)
+  - [Section component pattern](#section-component-pattern)
+  - [FAQ section (objection handling)](#faq-section-objection-handling)
+- [6. Exit Intent](#6-exit-intent)
+  - [Mouse leave detection hook](#mouse-leave-detection-hook)
+  - [Exit intent popup](#exit-intent-popup)
+- [7. Scarcity & Urgency](#7-scarcity--urgency)
+  - [Ethical guidelines](#ethical-guidelines)
+  - [Real countdown timer](#real-countdown-timer)
+  - [Limited spots (real capacity)](#limited-spots-real-capacity)
+  - [Stock indicator (e-commerce, real data only)](#stock-indicator-e-commerce-real-data-only)
+- [8. Form Optimization](#8-form-optimization)
+  - [Reduce fields — minimal form](#reduce-fields--minimal-form)
+  - [Inline validation](#inline-validation)
+  - [Multi-step form with progress bar](#multi-step-form-with-progress-bar)
+  - [Social login shortcut](#social-login-shortcut)
+- [9. Micro-Copy](#9-micro-copy)
+  - [Button labels](#button-labels)
+  - [Form placeholders](#form-placeholders)
+  - [Error messages](#error-messages)
+  - [Empty states for conversion](#empty-states-for-conversion)
+- [10. A/B Testing](#10-ab-testing)
+  - [Vercel Toolbar / Flags SDK](#vercel-toolbar--flags-sdk)
+  - [Cookie-based split via middleware](#cookie-based-split-via-middleware)
+  - [PostHog experiments](#posthog-experiments)
+  - [What to test first (priority order)](#what-to-test-first-priority-order)
+  - [Statistical significance](#statistical-significance)
+- [Quick Reference: Conversion Checklist](#quick-reference-conversion-checklist)
 
 Reference for conversion rate optimization patterns, UI components, and psychological triggers for web apps and landing pages.
 
-> **Ethics note:** Scarcity and urgency tactics should only reflect real constraints. Fake countdown timers, fabricated stock levels, or manufactured urgency erode trust and can violate consumer protection laws in the EU (UWG) and other jurisdictions. Only use these patterns when the underlying data is genuine.
+> **Ethics note:** Scarcity and urgency tactics should only reflect real constraints. Fake countdown timers, fabricated stock levels, or manufactured urgency erode trust and can violate consumer protection laws in the EU (UWG, Omnibus Directive) and other jurisdictions. Only use these patterns when the underlying data is genuine.
 
 ---
 
@@ -26,16 +77,15 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
       {testimonial.rating && (
         <div className="mb-3 flex gap-0.5">
           {Array.from({ length: 5 }).map((_, i) => (
-            <svg
+            <Star
               key={i}
-              className={`h-4 w-4 ${
-                i < testimonial.rating! ? "text-amber-400" : "text-muted"
-              }`}
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-            </svg>
+              className={cn(
+                "h-4 w-4",
+                i < testimonial.rating!
+                  ? "fill-amber-400 text-amber-400"
+                  : "text-muted-foreground"
+              )}
+            />
           ))}
         </div>
       )}
@@ -43,10 +93,12 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
         &ldquo;{testimonial.quote}&rdquo;
       </blockquote>
       <figcaption className="mt-4 flex items-center gap-3">
-        <img
+        <Image
           src={testimonial.avatarUrl}
           alt={testimonial.name}
-          className="h-10 w-10 rounded-full object-cover"
+          width={40}
+          height={40}
+          className="rounded-full object-cover"
         />
         <div>
           <p className="text-sm font-semibold text-foreground">
@@ -67,21 +119,57 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
 ```tsx
 function LogoBar({ logos }: { logos: { src: string; alt: string }[] }) {
   return (
-    <section className="py-12">
+    <section className="py-12 border-y bg-muted/30">
       <p className="mb-8 text-center text-sm font-medium text-muted-foreground">
         Trusted by teams at
       </p>
-      <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6">
+      <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6 px-4">
         {logos.map((logo) => (
-          <img
+          <Image
             key={logo.alt}
             src={logo.src}
             alt={logo.alt}
-            className="h-8 opacity-60 grayscale transition-all hover:opacity-100 hover:grayscale-0"
+            width={120}
+            height={40}
+            className="h-8 w-auto opacity-60 grayscale transition-all hover:opacity-100 hover:grayscale-0"
           />
         ))}
       </div>
     </section>
+  );
+}
+```
+
+### Aggregate review widget
+
+```tsx
+function ReviewSummary({
+  average,
+  total,
+}: {
+  average: number;
+  total: number;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex gap-0.5">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Star
+            key={i}
+            className={cn(
+              "h-5 w-5",
+              i < Math.round(average)
+                ? "fill-amber-400 text-amber-400"
+                : "text-gray-300"
+            )}
+          />
+        ))}
+      </div>
+      <span className="font-semibold">{average.toFixed(1)}</span>
+      <span className="text-muted-foreground text-sm">
+        ({total.toLocaleString()} reviews)
+      </span>
+    </div>
   );
 }
 ```
@@ -93,16 +181,22 @@ function LogoBar({ logos }: { logos: { src: string; alt: string }[] }) {
 
 import { useEffect, useState } from "react";
 
-function LiveActivity({ baseCount = 127 }: { baseCount?: number }) {
-  const [count, setCount] = useState(baseCount);
+function LiveViewers() {
+  const [count, setCount] = useState<number | null>(null);
 
   useEffect(() => {
-    // Simulate small fluctuations — replace with real WebSocket/API data
-    const interval = setInterval(() => {
-      setCount((prev) => prev + Math.floor(Math.random() * 3) - 1);
-    }, 5000);
+    // Fetch real count from your analytics or presence API
+    async function fetchCount() {
+      const res = await fetch("/api/active-viewers");
+      const data = await res.json();
+      setCount(data.count);
+    }
+    fetchCount();
+    const interval = setInterval(fetchCount, 30_000);
     return () => clearInterval(interval);
   }, []);
+
+  if (!count) return null;
 
   return (
     <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-sm text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
@@ -110,7 +204,7 @@ function LiveActivity({ baseCount = 127 }: { baseCount?: number }) {
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
         <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
       </span>
-      {count} people using this right now
+      {count} people viewing this right now
     </div>
   );
 }
@@ -125,23 +219,22 @@ function LiveActivity({ baseCount = 127 }: { baseCount?: number }) {
 ### Security badges row
 
 ```tsx
+import { ShieldCheck, RefreshCw, Lock, Award } from "lucide-react";
+
 function TrustBadges() {
   const badges = [
-    { icon: "shield-check", label: "256-bit SSL" },
-    { icon: "lock", label: "GDPR compliant" },
-    { icon: "credit-card", label: "Secure payments" },
-    { icon: "undo", label: "30-day money-back" },
+    { icon: ShieldCheck, label: "256-bit SSL" },
+    { icon: Lock, label: "GDPR compliant" },
+    { icon: RefreshCw, label: "30-day money-back" },
+    { icon: Award, label: "ISO 27001 certified" },
   ];
 
   return (
-    <div className="flex flex-wrap items-center justify-center gap-6 py-6">
-      {badges.map((badge) => (
-        <div
-          key={badge.label}
-          className="flex items-center gap-2 text-sm text-muted-foreground"
-        >
-          <Icon name={badge.icon} className="h-5 w-5 text-emerald-600" />
-          <span>{badge.label}</span>
+    <div className="flex flex-wrap items-center justify-center gap-6 py-6 text-sm text-muted-foreground">
+      {badges.map(({ icon: Icon, label }) => (
+        <div key={label} className="flex items-center gap-2">
+          <Icon className="h-5 w-5 text-emerald-600" />
+          <span>{label}</span>
         </div>
       ))}
     </div>
@@ -149,24 +242,19 @@ function TrustBadges() {
 }
 ```
 
-### Press mentions
+### Press mentions / "As seen in"
 
 ```tsx
 function PressBar() {
   return (
     <section className="border-y border-border bg-muted/30 py-8">
       <p className="mb-6 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-        As seen in
+        As featured in
       </p>
-      <div className="flex flex-wrap items-center justify-center gap-10">
-        {["TechCrunch", "Forbes", "Wired", "The Verge"].map((name) => (
-          <span
-            key={name}
-            className="text-lg font-serif font-bold text-muted-foreground/50"
-          >
-            {name}
-          </span>
-        ))}
+      <div className="flex flex-wrap items-center justify-center gap-10 px-4 opacity-50">
+        <Image src="/press/techcrunch.svg" alt="TechCrunch" width={130} height={30} />
+        <Image src="/press/forbes.svg" alt="Forbes" width={80} height={30} />
+        <Image src="/press/wired.svg" alt="Wired" width={80} height={30} />
       </div>
     </section>
   );
@@ -178,9 +266,9 @@ function PressBar() {
 ```tsx
 function MoneyBackGuarantee() {
   return (
-    <div className="mx-auto max-w-sm rounded-xl border-2 border-dashed border-emerald-300 bg-emerald-50 p-6 text-center dark:border-emerald-800 dark:bg-emerald-950">
+    <div className="mx-auto max-w-sm rounded-xl border-2 border-emerald-200 bg-emerald-50 p-6 text-center dark:border-emerald-800 dark:bg-emerald-950">
       <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900">
-        <Icon name="shield-check" className="h-6 w-6 text-emerald-600" />
+        <ShieldCheck className="h-6 w-6 text-emerald-600" />
       </div>
       <h3 className="text-base font-semibold text-foreground">
         30-Day Money-Back Guarantee
@@ -222,111 +310,105 @@ The $10 gap between Pro and Business — with a massive feature jump — makes B
 import { useState } from "react";
 
 function PricingToggle({
-  monthlyPrice,
-  annualPrice,
+  onToggle,
 }: {
-  monthlyPrice: number;
-  annualPrice: number;
+  onToggle: (annual: boolean) => void;
 }) {
   const [isAnnual, setIsAnnual] = useState(true);
-  const savings = Math.round(
-    ((monthlyPrice * 12 - annualPrice) / (monthlyPrice * 12)) * 100
-  );
+
+  function toggle() {
+    setIsAnnual(!isAnnual);
+    onToggle(!isAnnual);
+  }
 
   return (
-    <div>
-      <div className="flex items-center justify-center gap-3">
-        <span
-          className={`text-sm ${!isAnnual ? "font-semibold text-foreground" : "text-muted-foreground"}`}
-        >
-          Monthly
-        </span>
-        <button
-          role="switch"
-          aria-checked={isAnnual}
-          onClick={() => setIsAnnual(!isAnnual)}
-          className={`relative h-6 w-11 rounded-full transition-colors ${
-            isAnnual ? "bg-primary" : "bg-muted"
-          }`}
-        >
-          <span
-            className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
-              isAnnual ? "translate-x-5" : "translate-x-0"
-            }`}
-          />
-        </button>
-        <span
-          className={`text-sm ${isAnnual ? "font-semibold text-foreground" : "text-muted-foreground"}`}
-        >
-          Annual
-          <span className="ml-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
-            Save {savings}%
-          </span>
-        </span>
-      </div>
-
-      <div className="mt-6 text-center">
-        <span className="text-4xl font-bold text-foreground">
-          ${isAnnual ? Math.round(annualPrice / 12) : monthlyPrice}
-        </span>
-        <span className="text-muted-foreground">/mo</span>
-        {isAnnual && (
-          <p className="mt-1 text-sm text-muted-foreground">
-            Billed annually at ${annualPrice}/year
-          </p>
+    <div className="flex items-center justify-center gap-3">
+      <span
+        className={cn("text-sm", !isAnnual ? "font-semibold text-foreground" : "text-muted-foreground")}
+      >
+        Monthly
+      </span>
+      <button
+        role="switch"
+        aria-checked={isAnnual}
+        onClick={toggle}
+        className={cn(
+          "relative h-7 w-12 rounded-full transition-colors",
+          isAnnual ? "bg-primary" : "bg-muted"
         )}
-      </div>
+      >
+        <span
+          className={cn(
+            "absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform",
+            isAnnual ? "translate-x-5" : "translate-x-0.5"
+          )}
+        />
+      </button>
+      <span
+        className={cn("text-sm", isAnnual ? "font-semibold text-foreground" : "text-muted-foreground")}
+      >
+        Annual
+        <span className="ml-1.5 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+          Save 20%
+        </span>
+      </span>
     </div>
   );
 }
 ```
 
-### "Most popular" badge
+### Pricing card with "Most popular" badge + anchoring
 
 ```tsx
-function PricingCard({
-  isPopular,
-  name,
-  price,
-  features,
-}: {
-  isPopular?: boolean;
+interface PricingPlan {
   name: string;
-  price: string;
+  price: number;
+  originalPrice?: number;
+  period: string;
   features: string[];
-}) {
+  cta: string;
+  popular?: boolean;
+}
+
+function PricingCard({ plan }: { plan: PricingPlan }) {
   return (
     <div
-      className={`relative rounded-2xl border p-8 ${
-        isPopular
-          ? "border-primary shadow-lg shadow-primary/10 ring-1 ring-primary"
+      className={cn(
+        "relative rounded-2xl border p-8 flex flex-col",
+        plan.popular
+          ? "border-primary shadow-lg shadow-primary/10 ring-1 ring-primary scale-105"
           : "border-border"
-      }`}
+      )}
     >
-      {isPopular && (
+      {plan.popular && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-4 py-1 text-xs font-semibold text-primary-foreground">
           Most popular
         </div>
       )}
-      <h3 className="text-lg font-semibold">{name}</h3>
-      <p className="mt-2 text-3xl font-bold">{price}</p>
-      <ul className="mt-6 space-y-3">
-        {features.map((f) => (
+      <h3 className="text-lg font-semibold">{plan.name}</h3>
+      <div className="mt-4 flex items-baseline gap-2">
+        {plan.originalPrice && (
+          <span className="text-lg text-muted-foreground line-through">
+            ${plan.originalPrice}
+          </span>
+        )}
+        <span className="text-4xl font-bold">${plan.price}</span>
+        <span className="text-muted-foreground">/{plan.period}</span>
+      </div>
+      <ul className="mt-6 space-y-3 flex-1">
+        {plan.features.map((f) => (
           <li key={f} className="flex items-center gap-2 text-sm">
-            <Icon name="check" className="h-4 w-4 text-emerald-500" />
+            <Check className="h-4 w-4 text-emerald-500 shrink-0" />
             {f}
           </li>
         ))}
       </ul>
-      <button
-        className={`mt-8 w-full rounded-lg py-2.5 text-sm font-medium ${
-          isPopular
-            ? "bg-primary text-primary-foreground hover:bg-primary/90"
-            : "border border-border bg-background hover:bg-muted"
-        }`}
+      <Button
+        className="mt-8 w-full"
+        variant={plan.popular ? "default" : "outline"}
       >
-        Get started
-      </button>
+        {plan.cta}
+      </Button>
     </div>
   );
 }
@@ -366,31 +448,73 @@ function HeroSection() {
         The full-stack framework that turns weeks of work into hours.
       </p>
       {/* Primary CTA — above the fold */}
-      <div className="mt-8 flex gap-3">
-        <button className="rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground">
+      <div className="mt-8 flex flex-col sm:flex-row gap-3">
+        <Button size="lg" className="text-base px-8">
           Start building free
-        </button>
-        <button className="rounded-lg border border-border px-6 py-3 font-medium">
+        </Button>
+        <Button size="lg" variant="outline" className="text-base">
           See a demo
-        </button>
+        </Button>
       </div>
+      {/* Trust micro-text */}
+      <p className="mt-4 text-xs text-muted-foreground">
+        No credit card required. Setup in 5 minutes.
+      </p>
     </section>
   );
 }
 
+// Sticky bottom CTA for mobile — appears when scrolled past hero CTA
 function StickyBottomCTA() {
   return (
-    // Appears when scrolled past hero CTA
     <div className="fixed bottom-0 inset-x-0 z-50 border-t border-border bg-background/80 backdrop-blur-md p-3 md:hidden">
-      <button className="w-full rounded-lg bg-primary py-3 font-medium text-primary-foreground">
+      <Button className="w-full" size="lg">
         Start building free
-      </button>
+      </Button>
     </div>
   );
 }
 ```
 
-### Urgency without being sleazy
+### Ethical urgency
+
+Only use urgency if it reflects reality (real deadline, real limited offer).
+
+```tsx
+"use client";
+
+import { useEffect, useState } from "react";
+
+function OfferBanner({ expiresAt }: { expiresAt: Date }) {
+  const [timeLeft, setTimeLeft] = useState("");
+
+  useEffect(() => {
+    function update() {
+      const diff = expiresAt.getTime() - Date.now();
+      if (diff <= 0) {
+        setTimeLeft("Expired");
+        return;
+      }
+      const h = Math.floor(diff / 3_600_000);
+      const m = Math.floor((diff % 3_600_000) / 60_000);
+      const s = Math.floor((diff % 60_000) / 1000);
+      setTimeLeft(`${h}h ${m}m ${s}s`);
+    }
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, [expiresAt]);
+
+  if (timeLeft === "Expired") return null;
+
+  return (
+    <div className="bg-primary text-primary-foreground text-center py-2 text-sm font-medium">
+      Early-bird pricing ends in <span className="font-mono">{timeLeft}</span>{" "}
+      — Save 40%
+    </div>
+  );
+}
+```
 
 ```tsx
 // Good: real deadline
@@ -449,6 +573,59 @@ function StickyBottomCTA() {
    - "Still not sure? Book a 15-min call"
 ```
 
+### Hero section template
+
+```tsx
+function Hero() {
+  return (
+    <section className="relative overflow-hidden py-20 md:py-32">
+      <div className="container mx-auto px-4 text-center">
+        {/* Social proof micro-badge */}
+        <div className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm mb-6">
+          <span className="flex -space-x-1">
+            {[1, 2, 3].map((i) => (
+              <Image
+                key={i}
+                src={`/avatars/${i}.jpg`}
+                alt=""
+                width={24}
+                height={24}
+                className="rounded-full border-2 border-background"
+              />
+            ))}
+          </span>
+          <span className="text-muted-foreground">
+            Joined by 2,400+ marketers
+          </span>
+        </div>
+
+        <h1 className="text-4xl md:text-6xl font-bold tracking-tight max-w-3xl mx-auto">
+          Turn Ad Spend Into{" "}
+          <span className="text-primary">Predictable Revenue</span>
+        </h1>
+        <p className="mt-6 text-lg text-muted-foreground max-w-xl mx-auto">
+          AI-powered marketing intelligence that shows you exactly where to
+          optimize — so you scale what works and cut what doesn't.
+        </p>
+
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <Button size="lg" className="text-base px-8">
+            Start Free Trial
+          </Button>
+          <Button size="lg" variant="outline" className="text-base">
+            Watch 2-Min Demo
+          </Button>
+        </div>
+
+        <p className="mt-4 text-xs text-muted-foreground">
+          No credit card required. Setup in 5 minutes.
+        </p>
+      </div>
+    </section>
+  );
+}
+```
+
 ### Section component pattern
 
 ```tsx
@@ -494,11 +671,58 @@ function SectionHeader({
 }
 ```
 
+### FAQ section (objection handling)
+
+```tsx
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+
+const faqs = [
+  {
+    q: "Can I cancel anytime?",
+    a: "Yes. Cancel with one click, no questions asked. You keep access until the end of your billing period.",
+  },
+  {
+    q: "Is my data secure?",
+    a: "We use AES-256 encryption, are SOC 2 compliant, and never sell your data to third parties.",
+  },
+  {
+    q: "How long does setup take?",
+    a: "Most teams are up and running in under 10 minutes. Our onboarding wizard connects your ad accounts automatically.",
+  },
+];
+
+function FAQSection() {
+  return (
+    <Section>
+      <SectionHeader
+        title="Frequently Asked Questions"
+        description="Everything you need to know before getting started."
+      />
+      <div className="mx-auto max-w-2xl">
+        <Accordion type="single" collapsible>
+          {faqs.map((faq, i) => (
+            <AccordionItem key={i} value={`faq-${i}`}>
+              <AccordionTrigger>{faq.q}</AccordionTrigger>
+              <AccordionContent>{faq.a}</AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      </div>
+    </Section>
+  );
+}
+```
+
 ---
 
 ## 6. Exit Intent
 
-### Mouse leave detection
+### Mouse leave detection hook
 
 ```tsx
 "use client";
@@ -542,66 +766,76 @@ function useExitIntent() {
 ### Exit intent popup
 
 ```tsx
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+
 function ExitIntentPopup() {
   const { showPopup, dismiss } = useExitIntent();
 
-  if (!showPopup) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="relative mx-4 max-w-md rounded-2xl bg-background p-8 shadow-2xl">
-        <button
-          onClick={dismiss}
-          className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
-          aria-label="Close"
-        >
-          <Icon name="x" className="h-5 w-5" />
-        </button>
-
-        <h3 className="text-xl font-bold">Wait — before you go</h3>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Get 20% off your first month. This offer is only available right now.
-        </p>
-
+    <Dialog open={showPopup} onOpenChange={(open) => !open && dismiss()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Wait — before you go!</DialogTitle>
+          <DialogDescription>
+            Get our free Marketing ROI Calculator and see exactly where your
+            budget is leaking.
+          </DialogDescription>
+        </DialogHeader>
         <form
-          onSubmit={(e) => {
+          onSubmit={async (e) => {
             e.preventDefault();
-            // Handle email capture
+            const email = new FormData(e.currentTarget).get("email") as string;
+            await fetch("/api/lead", {
+              method: "POST",
+              body: JSON.stringify({ email, source: "exit-intent" }),
+            });
             dismiss();
           }}
-          className="mt-6"
+          className="flex gap-2 mt-4"
         >
-          <input
+          <Input
+            name="email"
             type="email"
-            placeholder="your@email.com"
             required
-            className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm"
+            placeholder="you@company.com"
+            className="flex-1"
           />
-          <button
-            type="submit"
-            className="mt-3 w-full rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground"
-          >
-            Claim my 20% discount
-          </button>
+          <Button type="submit">Get Free Calculator</Button>
         </form>
-
-        <button
-          onClick={dismiss}
-          className="mt-3 w-full text-center text-xs text-muted-foreground hover:underline"
-        >
-          No thanks, I will pay full price
-        </button>
-      </div>
-    </div>
+        <p className="text-xs text-muted-foreground mt-2">
+          No spam. Unsubscribe anytime.
+        </p>
+      </DialogContent>
+    </Dialog>
   );
 }
 ```
+
+**Best practices for exit intent:**
+- Show only once per session (use `sessionStorage` or `shown` state).
+- Offer genuine value (lead magnet, discount), not just "don't leave".
+- On mobile, use scroll-up detection or time-on-page delay instead of mouse-leave.
+- Respect user intent — provide a clear close button.
 
 ---
 
 ## 7. Scarcity & Urgency
 
-> **Ethical requirement:** Only use scarcity/urgency when reflecting real constraints. Fake timers and invented stock counts violate trust and potentially EU consumer law.
+### Ethical guidelines
+
+> **Rule: Only use scarcity and urgency when they reflect reality.**
+>
+> - Countdown timers must reference a real deadline (launch date, cohort close, sale end).
+> - "Limited spots" must be actually limited (e.g., consulting capacity, cohort size).
+> - Stock indicators must reflect real inventory from your database.
+> - Fake urgency destroys trust and can violate consumer protection laws (EU Omnibus Directive, German UWG).
+> - If the "offer" resets every day, it is not a real offer.
 
 ### Real countdown timer
 
@@ -609,6 +843,17 @@ function ExitIntentPopup() {
 "use client";
 
 import { useEffect, useState } from "react";
+
+function calcTimeLeft(deadline: Date) {
+  const total = deadline.getTime() - Date.now();
+  return {
+    total,
+    days: Math.max(0, Math.floor(total / (1000 * 60 * 60 * 24))),
+    hours: Math.max(0, Math.floor((total / (1000 * 60 * 60)) % 24)),
+    minutes: Math.max(0, Math.floor((total / (1000 * 60)) % 60)),
+    seconds: Math.max(0, Math.floor((total / 1000) % 60)),
+  };
+}
 
 function CountdownTimer({ deadline }: { deadline: Date }) {
   const [timeLeft, setTimeLeft] = useState(calcTimeLeft(deadline));
@@ -637,43 +882,64 @@ function CountdownTimer({ deadline }: { deadline: Date }) {
     </div>
   );
 }
-
-function calcTimeLeft(deadline: Date) {
-  const total = deadline.getTime() - Date.now();
-  return {
-    total,
-    days: Math.max(0, Math.floor(total / (1000 * 60 * 60 * 24))),
-    hours: Math.max(0, Math.floor((total / (1000 * 60 * 60)) % 24)),
-    minutes: Math.max(0, Math.floor((total / (1000 * 60)) % 60)),
-    seconds: Math.max(0, Math.floor((total / 1000) % 60)),
-  };
-}
 ```
 
-### Stock / capacity indicator (real data only)
+### Limited spots (real capacity)
 
 ```tsx
-function SpotsRemaining({ total, remaining }: { total: number; remaining: number }) {
-  const percentage = (remaining / total) * 100;
-  const isLow = percentage <= 20;
+function LimitedSpots({
+  total,
+  taken,
+}: {
+  total: number;
+  taken: number;
+}) {
+  const remaining = total - taken;
+  const percentage = (taken / total) * 100;
+
+  if (remaining <= 0) {
+    return (
+      <p className="text-sm font-medium text-destructive">
+        All spots are taken. Join the waitlist.
+      </p>
+    );
+  }
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between text-sm">
-        <span className={isLow ? "font-semibold text-amber-600" : "text-muted-foreground"}>
-          {remaining} of {total} spots remaining
-        </span>
-      </div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
         <div
-          className={`h-full rounded-full transition-all ${
-            isLow ? "bg-amber-500" : "bg-primary"
-          }`}
-          style={{ width: `${100 - percentage}%` }}
+          className={cn(
+            "h-full rounded-full transition-all",
+            remaining <= total * 0.2 ? "bg-amber-500" : "bg-primary"
+          )}
+          style={{ width: `${percentage}%` }}
         />
       </div>
+      <p className="text-sm text-muted-foreground">
+        <span className="font-semibold text-foreground">{remaining}</span> of{" "}
+        {total} spots remaining
+      </p>
     </div>
   );
+}
+```
+
+### Stock indicator (e-commerce, real data only)
+
+```tsx
+function StockIndicator({ stock }: { stock: number }) {
+  if (stock <= 0) {
+    return <p className="text-sm font-medium text-destructive">Out of stock</p>;
+  }
+  if (stock <= 5) {
+    return (
+      <p className="text-sm font-medium text-amber-600">
+        Only {stock} left in stock
+      </p>
+    );
+  }
+  return <p className="text-sm text-emerald-600">In stock</p>;
 }
 ```
 
@@ -684,30 +950,25 @@ function SpotsRemaining({ total, remaining }: { total: number; remaining: number
 ### Reduce fields — minimal form
 
 ```tsx
-// Bad: 8 fields
-// Good: 3 fields (name, email, company) — ask the rest later
+// Bad: 8 fields upfront
+// Good: 1-3 fields (email, name) — ask the rest during onboarding
 
 function MinimalSignupForm() {
   return (
-    <form className="space-y-4">
+    <form className="space-y-4 max-w-sm">
       <div>
-        <label htmlFor="email" className="text-sm font-medium">
-          Work email
-        </label>
-        <input
+        <Label htmlFor="email">Work email</Label>
+        <Input
           id="email"
           type="email"
           required
           placeholder="you@company.com"
-          className="mt-1 w-full rounded-lg border border-border px-4 py-2.5"
+          autoFocus
         />
       </div>
-      <button
-        type="submit"
-        className="w-full rounded-lg bg-primary py-2.5 font-medium text-primary-foreground"
-      >
+      <Button type="submit" className="w-full">
         Start free trial
-      </button>
+      </Button>
       <p className="text-center text-xs text-muted-foreground">
         No credit card required. Setup in 2 minutes.
       </p>
@@ -749,92 +1010,110 @@ function ValidatedInput({
 
   return (
     <div>
-      <label className="text-sm font-medium">{label}</label>
-      <input
+      <Label>{label}</Label>
+      <Input
         type={type}
         value={value}
         onChange={handleChange}
         onBlur={handleBlur}
-        className={`mt-1 w-full rounded-lg border px-4 py-2.5 ${
-          error && touched
-            ? "border-red-500 focus:ring-red-500"
-            : "border-border focus:ring-primary"
-        }`}
+        className={cn(
+          touched && error && "border-destructive focus-visible:ring-destructive"
+        )}
         {...props}
       />
       {error && touched && (
-        <p className="mt-1 text-xs text-red-500">{error}</p>
+        <p className="mt-1 text-xs text-destructive">{error}</p>
       )}
     </div>
   );
 }
+
+// Usage
+<ValidatedInput
+  label="Email"
+  type="email"
+  placeholder="you@company.com"
+  validate={(v) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? null : "Please enter a valid email (e.g. you@company.com)"
+  }
+/>
 ```
 
-### Multi-step form with progress
+### Multi-step form with progress bar
 
 ```tsx
 "use client";
 
 import { useState } from "react";
 
-function MultiStepForm({ steps }: { steps: { title: string; content: React.ReactNode }[] }) {
-  const [currentStep, setCurrentStep] = useState(0);
+function MultiStepForm() {
+  const [step, setStep] = useState(0);
+  const steps = ["Account", "Company", "Goals"];
 
   return (
-    <div>
+    <div className="max-w-md mx-auto space-y-6">
       {/* Progress bar */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          {steps.map((step, i) => (
-            <div key={i} className="flex items-center">
-              <div
-                className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
-                  i <= currentStep
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground"
-                }`}
-              >
-                {i < currentStep ? (
-                  <Icon name="check" className="h-4 w-4" />
-                ) : (
-                  i + 1
-                )}
-              </div>
-              {i < steps.length - 1 && (
-                <div
-                  className={`mx-2 h-0.5 w-12 sm:w-24 ${
-                    i < currentStep ? "bg-primary" : "bg-muted"
-                  }`}
-                />
-              )}
-            </div>
+      <div className="space-y-2">
+        <div className="flex justify-between text-xs text-muted-foreground">
+          {steps.map((s, i) => (
+            <span
+              key={s}
+              className={cn(i <= step && "text-foreground font-medium")}
+            >
+              {s}
+            </span>
           ))}
         </div>
-        <p className="mt-2 text-sm font-medium">
-          Step {currentStep + 1}: {steps[currentStep].title}
-        </p>
+        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+          <div
+            className="h-full rounded-full bg-primary transition-all duration-300"
+            style={{ width: `${((step + 1) / steps.length) * 100}%` }}
+          />
+        </div>
       </div>
 
       {/* Step content */}
-      <div>{steps[currentStep].content}</div>
+      {step === 0 && (
+        <div className="space-y-3">
+          <Input placeholder="Full name" />
+          <Input placeholder="Work email" type="email" />
+        </div>
+      )}
+      {step === 1 && (
+        <div className="space-y-3">
+          <Input placeholder="Company name" />
+          <Input placeholder="Website URL" type="url" />
+        </div>
+      )}
+      {step === 2 && (
+        <div className="space-y-3">
+          <p className="text-sm font-medium">What's your primary goal?</p>
+          {["Increase leads", "Reduce CAC", "Scale ad spend"].map((goal) => (
+            <label
+              key={goal}
+              className="flex items-center gap-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/50"
+            >
+              <input type="radio" name="goal" value={goal} />
+              <span className="text-sm">{goal}</span>
+            </label>
+          ))}
+        </div>
+      )}
 
-      {/* Navigation */}
-      <div className="mt-6 flex justify-between">
-        <button
-          onClick={() => setCurrentStep((s) => Math.max(0, s - 1))}
-          disabled={currentStep === 0}
-          className="rounded-lg border border-border px-4 py-2 text-sm disabled:opacity-50"
-        >
-          Back
-        </button>
-        <button
+      <div className="flex gap-3">
+        {step > 0 && (
+          <Button variant="outline" onClick={() => setStep(step - 1)}>
+            Back
+          </Button>
+        )}
+        <Button
+          className="flex-1"
           onClick={() =>
-            setCurrentStep((s) => Math.min(steps.length - 1, s + 1))
+            step < steps.length - 1 ? setStep(step + 1) : handleSubmit()
           }
-          className="rounded-lg bg-primary px-6 py-2 text-sm font-medium text-primary-foreground"
         >
-          {currentStep === steps.length - 1 ? "Submit" : "Continue"}
-        </button>
+          {step < steps.length - 1 ? "Continue" : "Create Account"}
+        </Button>
       </div>
     </div>
   );
@@ -847,14 +1126,14 @@ function MultiStepForm({ steps }: { steps: { title: string; content: React.React
 function SocialLogin() {
   return (
     <div className="space-y-3">
-      <button className="flex w-full items-center justify-center gap-2 rounded-lg border border-border py-2.5 text-sm font-medium hover:bg-muted">
+      <Button variant="outline" className="w-full gap-2">
         <GoogleIcon className="h-5 w-5" />
         Continue with Google
-      </button>
-      <button className="flex w-full items-center justify-center gap-2 rounded-lg border border-border py-2.5 text-sm font-medium hover:bg-muted">
+      </Button>
+      <Button variant="outline" className="w-full gap-2">
         <GitHubIcon className="h-5 w-5" />
         Continue with GitHub
-      </button>
+      </Button>
       <div className="relative my-4">
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-border" />
@@ -874,37 +1153,40 @@ function SocialLogin() {
 
 ## 9. Micro-Copy
 
+Good micro-copy reduces friction, increases confidence, and nudges action.
+
 ### Button labels
 
-| Context | Bad | Good |
-|---|---|---|
-| Signup | Submit | Create my account |
-| Delete | Delete | Remove permanently |
-| Cancel subscription | Cancel | I want to cancel |
-| Save changes | Save | Save changes |
-| Loading state | Loading... | Saving your changes... |
-| Success | Done | Changes saved |
+| Context | Bad | Good | Why |
+|---|---|---|---|
+| Signup | Submit | Create my account | Specific action |
+| Download | Download | Get the free guide | States the value |
+| Purchase | Buy now | Start my 14-day trial | Reduces friction |
+| Navigation | Learn more | See how it works | Sets expectation |
+| Delete | Delete | Remove permanently | Sets expectation |
+| Loading | Loading... | Saving your changes... | Reassuring |
+| Success | Done | Changes saved | Clear feedback |
 
 ### Form placeholders
 
 ```tsx
 // Bad: placeholder repeats the label
-<label>Email</label>
-<input placeholder="Email" />
+<Label>Email</Label>
+<Input placeholder="Email" />
 
 // Good: placeholder provides an example
-<label>Work email</label>
-<input placeholder="you@company.com" />
+<Label>Work email</Label>
+<Input placeholder="you@company.com" />
 
 // Good: placeholder sets expectations
-<label>Company website</label>
-<input placeholder="https://example.com" />
+<Label>Company website</Label>
+<Input placeholder="https://example.com" />
 ```
 
 ### Error messages
 
 ```tsx
-// Bad
+// Bad — vague, unhelpful
 "Invalid input"
 "Error"
 "Field required"
@@ -915,16 +1197,16 @@ function SocialLogin() {
 "We need your company name to set up your workspace"
 ```
 
-### Empty states
+### Empty states for conversion
 
 ```tsx
 function EmptyState({
-  icon,
+  icon: Icon,
   title,
   description,
   action,
 }: {
-  icon: string;
+  icon: React.ComponentType<{ className?: string }>;
   title: string;
   description: string;
   action: { label: string; onClick: () => void };
@@ -932,28 +1214,25 @@ function EmptyState({
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
       <div className="mb-4 rounded-full bg-muted p-4">
-        <Icon name={icon} className="h-8 w-8 text-muted-foreground" />
+        <Icon className="h-8 w-8 text-muted-foreground" />
       </div>
       <h3 className="text-lg font-semibold">{title}</h3>
       <p className="mt-1 max-w-sm text-sm text-muted-foreground">
         {description}
       </p>
-      <button
-        onClick={action.onClick}
-        className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-      >
+      <Button onClick={action.onClick} className="mt-6">
         {action.label}
-      </button>
+      </Button>
     </div>
   );
 }
 
 // Usage
 <EmptyState
-  icon="inbox"
-  title="No messages yet"
-  description="When customers reach out, their messages will appear here."
-  action={{ label: "Set up live chat", onClick: openSetup }}
+  icon={BarChart3}
+  title="No campaigns connected yet"
+  description="Connect your first ad account to start seeing real-time performance data."
+  action={{ label: "Connect Ad Account", onClick: openSetup }}
 />
 ```
 
@@ -961,7 +1240,33 @@ function EmptyState({
 
 ## 10. A/B Testing
 
-### Vercel Toolbar / Edge Config flags
+### Vercel Toolbar / Flags SDK
+
+Vercel's Flags SDK combined with Edge Config enables feature flags and A/B tests at the edge with zero latency.
+
+```tsx
+// flags.ts
+import { flag } from "@vercel/flags/next";
+
+export const newPricingPage = flag<boolean>({
+  key: "new-pricing-page",
+  decide() {
+    return Math.random() > 0.5; // 50/50 split
+  },
+});
+```
+
+```tsx
+// app/pricing/page.tsx
+import { newPricingPage } from "@/flags";
+
+export default async function PricingPage() {
+  const showNewPricing = await newPricingPage();
+  return showNewPricing ? <NewPricing /> : <OldPricing />;
+}
+```
+
+### Cookie-based split via middleware
 
 ```ts
 // middleware.ts
@@ -991,7 +1296,6 @@ import { cookies } from "next/headers";
 export default async function Home() {
   const cookieStore = await cookies();
   const heroVariant = cookieStore.get("ab-hero")?.value ?? "control";
-
   return heroVariant === "variant" ? <HeroVariantB /> : <HeroControl />;
 }
 ```
@@ -1028,13 +1332,20 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
 
 import { useFeatureFlagVariantKey } from "posthog-js/react";
 
-function PricingSection() {
-  const variant = useFeatureFlagVariantKey("pricing-test");
-  // variant: "control" | "three-tiers" | "single-tier" | undefined
+function HeroHeadline() {
+  const variant = useFeatureFlagVariantKey("hero-headline-test");
 
-  if (variant === "three-tiers") return <ThreeTierPricing />;
-  if (variant === "single-tier") return <SingleTierPricing />;
-  return <DefaultPricing />;
+  const headlines: Record<string, string> = {
+    control: "Marketing Intelligence for Agencies",
+    "benefit-led": "Turn Ad Spend Into Predictable Revenue",
+    "pain-led": "Stop Wasting 30% of Your Ad Budget",
+  };
+
+  return (
+    <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
+      {headlines[variant as string] ?? headlines.control}
+    </h1>
+  );
 }
 ```
 
@@ -1067,4 +1378,22 @@ function handleSignup() {
 - **One test at a time**: Avoid running overlapping tests on the same page
 - **95% confidence**: Standard threshold — do not call a winner below this
 - **Do not peek**: Decide sample size upfront; checking daily inflates false positives
-- **Use a calculator**: PostHog has built-in significance tracking; for manual, use Evan Miller's calculator
+- **Use a calculator**: PostHog has built-in significance tracking; for manual, use Evan Miller's calculator or VWO's calculator
+
+---
+
+## Quick Reference: Conversion Checklist
+
+- [ ] Hero has a clear, benefit-driven headline
+- [ ] Primary CTA is above the fold with action-oriented copy
+- [ ] Social proof appears early (logo bar, user count, testimonials)
+- [ ] Trust signals near checkout/signup (badges, guarantee, security)
+- [ ] Pricing uses anchoring and highlights recommended plan
+- [ ] FAQ handles top 3-5 objections
+- [ ] Forms ask minimal fields at signup
+- [ ] Inline validation with helpful error messages
+- [ ] CTA repeats at bottom of page
+- [ ] Mobile has sticky CTA or simplified flow
+- [ ] Exit intent offers genuine value (lead magnet)
+- [ ] Urgency/scarcity is real and verifiable
+- [ ] A/B test is running on the highest-impact element

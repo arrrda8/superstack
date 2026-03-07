@@ -1,5 +1,24 @@
 # Payment & Billing Patterns (2026)
 
+## Table of Contents
+- [Stripe + Next.js App Router](#stripe--nextjs-app-router)
+  - [Key Principle: Server Actions, NOT API Routes](#key-principle-server-actions-not-api-routes)
+  - [Installation](#installation)
+  - [Stripe Server Client (`lib/stripe.ts`)](#stripe-server-client-libstripets)
+  - [Embedded Checkout (Recommended Pattern)](#embedded-checkout-recommended-pattern)
+- [Webhook Handler](#webhook-handler)
+- [Stripe Billing Portal](#stripe-billing-portal)
+- [EU VAT Handling](#eu-vat-handling)
+  - [Option A: Stripe Tax (Recommended)](#option-a-stripe-tax-recommended)
+  - [VAT ID Validation (B2B Reverse Charge)](#vat-id-validation-b2b-reverse-charge)
+  - [VAT Rules Summary](#vat-rules-summary)
+- [Merchant of Record Alternatives](#merchant-of-record-alternatives)
+  - [When to Use MoR](#when-to-use-mor)
+  - [When to Stick with Stripe](#when-to-stick-with-stripe)
+- [Pricing Page Patterns](#pricing-page-patterns)
+  - [Structure](#structure)
+  - [Conversion Best Practices](#conversion-best-practices)
+
 ## Stripe + Next.js App Router
 
 ### Key Principle: Server Actions, NOT API Routes

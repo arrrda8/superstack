@@ -1,5 +1,36 @@
 # Authentication Patterns (2026)
 
+## Table of Contents
+- [Auth Solution Comparison](#auth-solution-comparison)
+  - [Decision Matrix](#decision-matrix)
+- [Better Auth Setup](#better-auth-setup)
+  - [Installation](#installation)
+  - [Configuration (`lib/auth.ts`)](#configuration-libauththats)
+  - [Route Handler (`app/api/auth/[...all]/route.ts`)](#route-handler-appapiautballroutets)
+  - [Client (`lib/auth-client.ts`)](#client-libauth-clientts)
+  - [Auto-Generate DB Schema](#auto-generate-db-schema)
+- [Plugin System](#plugin-system)
+- [Passkey / WebAuthn Implementation](#passkey--webauthn-implementation)
+  - [Option A: Via Better Auth Plugin (recommended)](#option-a-via-better-auth-plugin-recommended)
+  - [Option B: Manual with SimpleWebAuthn](#option-b-manual-with-simplewebauthn)
+- [Magic Link Authentication](#magic-link-authentication)
+  - [Security Checklist](#security-checklist)
+- [OAuth Social Login](#oauth-social-login)
+  - [Better Auth (see config above)](#better-auth-see-config-above)
+  - [Supabase Auth Alternative](#supabase-auth-alternative)
+  - [Env Var Naming Convention](#env-var-naming-convention)
+- [Two-Factor Authentication (2FA / TOTP)](#two-factor-authentication-2fa--totp)
+  - [Manual Implementation with otpauth](#manual-implementation-with-otpauth)
+  - [Backup / Recovery Codes](#backup--recovery-codes)
+  - [Security](#security)
+- [Session Management](#session-management)
+  - [Recommended: Server-Side Sessions (Next.js)](#recommended-server-side-sessions-nextjs)
+  - [Hybrid Pattern (session cookie + short-lived JWT for API calls)](#hybrid-pattern-session-cookie--short-lived-jwt-for-api-calls)
+- [RBAC (Role-Based Access Control)](#rbac-role-based-access-control)
+  - [Permission System](#permission-system)
+  - [Permission Check Helper](#permission-check-helper)
+  - [Next.js Middleware for Route Protection](#nextjs-middleware-for-route-protection)
+
 ## Auth Solution Comparison
 
 | Feature | Better Auth | Clerk | Supabase Auth | Auth.js v5 |

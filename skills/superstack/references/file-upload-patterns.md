@@ -1,5 +1,38 @@
 # File Upload Patterns — Supabase Storage + Next.js
 
+## Table of Contents
+- [1. Supabase Storage Setup](#1-supabase-storage-setup)
+  - [Bucket Creation (Supabase Dashboard or Migration)](#bucket-creation-supabase-dashboard-or-migration)
+  - [Client Upload Helper](#client-upload-helper)
+- [2. Presigned URLs (Server-Generated Upload)](#2-presigned-urls-server-generated-upload)
+  - [Server Action](#server-action)
+  - [Client Direct Upload](#client-direct-upload)
+- [3. Drag-and-Drop](#3-drag-and-drop)
+  - [Install](#install)
+  - [Dropzone Component](#dropzone-component)
+- [4. Image Compression](#4-image-compression)
+  - [Install](#install-1)
+  - [Compression Utility](#compression-utility)
+  - [Usage with Upload](#usage-with-upload)
+- [5. Upload Progress](#5-upload-progress)
+  - [Progress Hook](#progress-hook)
+  - [Progress Bar Component](#progress-bar-component)
+- [6. Image Preview](#6-image-preview)
+  - [Preview with FileReader](#preview-with-filereader)
+  - [Gallery Grid](#gallery-grid)
+- [7. Avatar Upload](#7-avatar-upload)
+  - [Install](#install-2)
+  - [Avatar Upload Component](#avatar-upload-component)
+- [8. Document Upload](#8-document-upload)
+  - [Document List Component](#document-list-component)
+- [9. Bulk Upload with Queue](#9-bulk-upload-with-queue)
+  - [Bulk Upload Hook](#bulk-upload-hook)
+  - [Bulk Upload UI](#bulk-upload-ui)
+- [10. Security](#10-security)
+  - [File Type Validation (Magic Bytes)](#file-type-validation-magic-bytes)
+  - [Server-Side Validation (API Route)](#server-side-validation-api-route)
+  - [Security Checklist](#security-checklist)
+
 Production-ready patterns for file uploads with Supabase Storage, drag-and-drop, compression, and security.
 
 ---

@@ -3,15 +3,39 @@
 Implementation guides for common SaaS features that should be discussed during brainstorming. Read this when building a SaaS product, tool, or platform to ensure nothing critical is missed.
 
 ## Table of Contents
-1. Admin Panel
-2. Affiliate / Referral Program
-3. Onboarding Flow
-4. Notification System
-5. Role & Permission System
-6. Billing & Subscription Management
-7. Multi-tenancy
-8. Audit Log
-9. API / Developer Access
+- [1. Admin Panel](#1-admin-panel)
+  - [What it typically needs](#what-it-typically-needs)
+- [2. Affiliate / Referral Program](#2-affiliate--referral-program)
+  - [Core components](#core-components)
+  - [Database schema (Prisma example)](#database-schema-prisma-example)
+  - [Implementation notes](#implementation-notes)
+- [3. Onboarding Flow](#3-onboarding-flow)
+  - [Why it matters](#why-it-matters)
+  - [Common patterns](#common-patterns)
+  - [Implementation](#implementation)
+  - [Metrics to track](#metrics-to-track)
+- [4. Notification System](#4-notification-system)
+  - [Types of notifications](#types-of-notifications)
+  - [Database schema](#database-schema)
+- [5. Role & Permission System](#5-role--permission-system)
+  - [Common role structures](#common-role-structures)
+  - [Implementation pattern](#implementation-pattern)
+- [6. Billing & Subscription Management](#6-billing--subscription-management)
+  - [Beyond basic Stripe Checkout](#beyond-basic-stripe-checkout)
+  - [Customer portal](#customer-portal)
+- [7. Multi-tenancy](#7-multi-tenancy)
+  - [Architecture patterns](#architecture-patterns)
+  - [Implementation (shared DB approach)](#implementation-shared-db-approach)
+- [8. Audit Log](#8-audit-log)
+  - [What to log](#what-to-log)
+  - [Schema](#schema)
+  - [Display](#display)
+- [9. API / Developer Access](#9-api--developer-access)
+- [10. Feature Flags](#10-feature-flags)
+- [11. Status Page](#11-status-page)
+- [12. Changelog Widget](#12-changelog-widget)
+  - [In-app changelog](#in-app-changelog)
+  - [Database schema](#database-schema-1)
 
 ---
 

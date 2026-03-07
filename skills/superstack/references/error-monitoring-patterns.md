@@ -1,5 +1,37 @@
 # Error Monitoring Patterns
 
+## Table of Contents
+
+- [1. Custom Error Classes](#1-custom-error-classes)
+- [2. User-Facing vs Dev Errors](#2-user-facing-vs-dev-errors)
+- [3. Sentry Setup](#3-sentry-setup)
+  - [Installation](#installation)
+  - [Configuration](#configuration)
+  - [Tunnel Route (Bypass Ad Blockers)](#tunnel-route-bypass-ad-blockers)
+  - [Source Maps (next.config.ts)](#source-maps-nextconfigts)
+- [4. Error Boundaries](#4-error-boundaries)
+- [5. Alerting Rules](#5-alerting-rules)
+  - [Sentry Alert Configuration](#sentry-alert-configuration)
+  - [Alert Fatigue Prevention](#alert-fatigue-prevention)
+- [6. Error Budgets](#6-error-budgets)
+  - [Concepts](#concepts)
+  - [Practical Implementation](#practical-implementation)
+  - [Decision Framework](#decision-framework)
+- [7. Structured Logging](#7-structured-logging)
+  - [Pino Setup](#pino-setup)
+  - [Correlation IDs in Middleware](#correlation-ids-in-middleware)
+  - [Logging Patterns](#logging-patterns)
+- [8. API Error Handling](#8-api-error-handling)
+  - [Consistent Error Response Format](#consistent-error-response-format)
+  - [Error Handler Middleware](#error-handler-middleware)
+  - [Usage](#usage)
+- [9. Client-Side Error Tracking](#9-client-side-error-tracking)
+  - [Error Boundary Cascade](#error-boundary-cascade)
+- [10. Debug Workflow](#10-debug-workflow)
+  - [From Alert to Fix](#from-alert-to-fix)
+  - [Postmortem Template (for P0/P1)](#postmortem-template-for-p0p1)
+  - [Useful Sentry Search Queries](#useful-sentry-search-queries)
+
 ## 1. Custom Error Classes
 
 Base error class hierarchy for consistent error handling across the stack.

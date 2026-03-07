@@ -3,12 +3,37 @@
 This document contains specific, actionable security patterns and vulnerability fixes for web applications. Read this during Phase 4 (IT Security Audit) and whenever modifying back-end code.
 
 ## Table of Contents
-1. Common Vulnerabilities & Fixes
-2. Authentication Hardening Patterns
-3. API Security Patterns
-4. Next.js / React Security Specifics
-5. Database Security Patterns
-6. Deployment Hardening
+- [1. Common Vulnerabilities & Fixes](#1-common-vulnerabilities--fixes)
+  - [XSS (Cross-Site Scripting)](#xss-cross-site-scripting)
+  - [SQL / NoSQL Injection](#sql--nosql-injection)
+  - [CSRF (Cross-Site Request Forgery)](#csrf-cross-site-request-forgery)
+  - [IDOR (Insecure Direct Object Reference)](#idor-insecure-direct-object-reference)
+- [2. Authentication Hardening Patterns](#2-authentication-hardening-patterns)
+  - [Password hashing](#password-hashing)
+  - [Rate limiting on auth endpoints](#rate-limiting-on-auth-endpoints)
+  - [Secure session cookies](#secure-session-cookies)
+  - [Password reset tokens](#password-reset-tokens)
+- [3. API Security Patterns](#3-api-security-patterns)
+  - [Input validation with Zod](#input-validation-with-zod)
+  - [CORS configuration](#cors-configuration)
+  - [Webhook signature verification (Stripe example)](#webhook-signature-verification-stripe-example)
+- [4. Next.js / React Security Specifics](#4-nextjs--react-security-specifics)
+  - [Security headers in next.config.ts](#security-headers-in-nextconfigts)
+  - [Protecting API routes with middleware](#protecting-api-routes-with-middleware)
+  - [Environment variable safety](#environment-variable-safety)
+- [5. Database Security Patterns](#5-database-security-patterns)
+  - [Row-Level Security (Supabase/PostgreSQL)](#row-level-security-supabasepostgresql)
+  - [Prisma security patterns](#prisma-security-patterns)
+- [6. Deployment Hardening](#6-deployment-hardening)
+  - [Production checklist](#production-checklist)
+  - [Error handling in production](#error-handling-in-production)
+- [7. API Key Security](#7-api-key-security)
+  - [Generating secure API keys](#generating-secure-api-keys)
+  - [Webhook signature verification (generic pattern)](#webhook-signature-verification-generic-pattern)
+- [8. Auth Security Updates (2026)](#8-auth-security-updates-2026)
+  - [Better Auth (new standard since 2025)](#better-auth-new-standard-since-2025)
+  - [Passkey/WebAuthn](#passkeywebauthn)
+  - [Session security checklist](#session-security-checklist)
 
 ---
 

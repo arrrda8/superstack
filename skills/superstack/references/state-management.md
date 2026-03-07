@@ -1,5 +1,41 @@
 # State Management — Superstack Reference
 
+## Table of Contents
+- [1. Zustand](#1-zustand)
+  - [Basic Store Creation](#basic-store-creation)
+  - [Slices Pattern](#slices-pattern)
+  - [Persist Middleware](#persist-middleware)
+  - [Devtools Middleware](#devtools-middleware)
+  - [Immer Middleware](#immer-middleware)
+- [2. TanStack Query](#2-tanstack-query)
+  - [QueryClient Setup (App Router)](#queryclient-setup-app-router)
+  - [useQuery / useMutation](#usequery--usemutation)
+  - [Prefetching in RSC](#prefetching-in-rsc)
+  - [staleTime vs gcTime](#staletime-vs-gctime)
+- [3. Optimistic Updates](#3-optimistic-updates)
+- [4. Infinite Scroll](#4-infinite-scroll)
+  - [useInfiniteQuery with Cursor Pagination](#useinfinitequery-with-cursor-pagination)
+  - [Intersection Observer Trigger](#intersection-observer-trigger)
+- [5. nuqs — URL State Management](#5-nuqs--url-state-management)
+  - [Setup (App Router)](#setup-app-router)
+  - [useQueryState](#usequerystate)
+  - [Multiple Params with useQueryStates](#multiple-params-with-usequerystates)
+- [6. React Context](#6-react-context)
+  - [When to Use](#when-to-use)
+  - [When NOT to Use](#when-not-to-use)
+  - [Correct Pattern](#correct-pattern)
+- [7. Server State vs Client State — Decision Matrix](#7-server-state-vs-client-state--decision-matrix)
+- [8. Form State](#8-form-state)
+  - [React Hook Form (Recommended for complex forms)](#react-hook-form-recommended-for-complex-forms)
+  - [When to Lift Form State](#when-to-lift-form-state)
+- [9. Global UI State — Zustand Patterns](#9-global-ui-state--zustand-patterns)
+- [10. Hydration — Zustand + SSR](#10-hydration--zustand--ssr)
+  - [The Problem](#the-problem)
+  - [Solution 1: useEffect Guard](#solution-1-useeffect-guard)
+  - [Solution 2: onRehydrateStorage + skipHydration](#solution-2-onrehydratestorage--skiphydration)
+  - [Solution 3: suppressHydrationWarning](#solution-3-suppresshydrationwarning)
+  - [Best Practice Checklist](#best-practice-checklist)
+
 ## 1. Zustand
 
 ### Basic Store Creation

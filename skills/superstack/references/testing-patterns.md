@@ -3,11 +3,29 @@
 Concrete test recipes for web projects. Tests are written DURING development (continuous testing), not as a separate phase after implementation. Every feature gets tests alongside its code.
 
 ## Table of Contents
-1. Vitest + Testing Library Setup
-2. Component Test Recipes
-3. API Route Test Recipes
-4. E2E Test Recipes (Playwright)
-5. Auth Flow Testing
+- [1. Vitest + Testing Library Setup](#1-vitest--testing-library-setup)
+  - [vitest.config.ts](#vitestconfigts)
+  - [__tests__/setup.ts](#__tests__setupts)
+  - [Dev dependencies to include](#dev-dependencies-to-include)
+- [2. Component Test Recipes](#2-component-test-recipes)
+  - [Button component](#button-component)
+  - [Cookie consent component](#cookie-consent-component)
+  - [Navigation / Header](#navigation--header)
+  - [Form with validation](#form-with-validation)
+- [3. API Route Test Recipes](#3-api-route-test-recipes)
+  - [Testing Next.js API routes](#testing-nextjs-api-routes)
+  - [Testing authenticated endpoints](#testing-authenticated-endpoints)
+- [4. E2E Test Recipes (Playwright)](#4-e2e-test-recipes-playwright)
+  - [playwright.config.ts](#playwrightconfigts)
+  - [Auth flow E2E](#auth-flow-e2e)
+  - [Navigation E2E](#navigation-e2e)
+- [5. Auth Flow Testing](#5-auth-flow-testing)
+  - [Testing password reset flow](#testing-password-reset-flow)
+- [6. API Mocking with MSW (Mock Service Worker)](#6-api-mocking-with-msw-mock-service-worker)
+  - [Setup](#setup)
+  - [Define handlers](#define-handlers)
+  - [Use in tests](#use-in-tests)
+  - [Override per test for error scenarios](#override-per-test-for-error-scenarios)
 
 ---
 
