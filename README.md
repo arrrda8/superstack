@@ -81,16 +81,24 @@ Copy `skills/superstack/` (with `SKILL.md` + `references/`) to `~/.claude/skills
 
 ## Usage
 
-### Slash Command
+### Slash Commands
+
+| Command | Purpose |
+|---------|---------|
+| `/superstack:build` | Start a new project from scratch (16-phase workflow) |
+| `/superstack:review` | Full project review against all quality standards (design, code, copy, security, a11y, performance, SEO, compliance) |
+| `/superstack:audit` | Focused audit on security, accessibility, performance, or SEO |
+| `/superstack:redesign` | Redesign an existing project with premium design standards |
+| `/superstack:add` | Add a feature to an existing project (auth, payments, i18n, etc.) |
+
+**Examples:**
 
 ```
-/superstack:build
-```
-
-Or with a project description:
-
-```
-/superstack:build SaaS dashboard for project management with auth, Stripe billing, and GDPR compliance
+/superstack:build SaaS dashboard for project management
+/superstack:review
+/superstack:audit security
+/superstack:redesign homepage
+/superstack:add stripe payments
 ```
 
 ### Automatic Triggering
@@ -109,7 +117,11 @@ superstack/
 ├── .claude-plugin/
 │   └── plugin.json                     # Plugin manifest
 ├── commands/
-│   └── build.md                        # /superstack:build slash command
+│   ├── build.md                        # /superstack:build — new project (16 phases)
+│   ├── review.md                       # /superstack:review — full quality review
+│   ├── audit.md                        # /superstack:audit — security/a11y/perf/SEO
+│   ├── redesign.md                     # /superstack:redesign — visual overhaul
+│   └── add.md                          # /superstack:add — add feature to project
 ├── skills/
 │   └── superstack/
 │       ├── SKILL.md                    # Main skill file (368 lines, optimized per Anthropic guidelines)
