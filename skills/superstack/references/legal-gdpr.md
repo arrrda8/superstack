@@ -22,7 +22,7 @@
   - [Google Consent Mode v2](#google-consent-mode-v2)
   - [Updating Consent After User Choice](#updating-consent-after-user-choice)
   - [TCF v2.3](#tcf-v23)
-- [5. Privacy Policy (Datenschutzerklaerung)](#5-privacy-policy-datenschutzerklaerung)
+- [5. Privacy Policy (Datenschutzerklärung)](#5-privacy-policy-datenschutzerklaerung)
   - [Recommended Generator](#recommended-generator)
   - [Must Cover](#must-cover)
   - [Placement](#placement)
@@ -57,7 +57,7 @@ TMG references are outdated.
 
 - Must be reachable within **2 clicks** from every page
 - Label: "Impressum" (preferred) or "Kontakt"
-- Must be on a **separate, dedicated page** — not buried inside Datenschutzerklaerung
+- Must be on a **separate, dedicated page** — not buried inside Datenschutzerklärung
 - Must be machine-readable (no image-only Impressum)
 
 ### Implementation
@@ -86,7 +86,7 @@ export default function ImpressumPage() {
       </p>
 
       <h2>Vertretungsberechtigt</h2>
-      <p>Geschaeftsfuehrer: Max Mustermann</p>
+      <p>Geschäftsführer: Max Mustermann</p>
 
       <h2>Registereintrag</h2>
       <p>
@@ -357,7 +357,7 @@ If using a CMP (Consent Management Platform), verify it supports TCF 2.3.
 
 ---
 
-## 5. Privacy Policy (Datenschutzerklaerung)
+## 5. Privacy Policy (Datenschutzerklärung)
 
 ### Recommended Generator
 
@@ -437,7 +437,7 @@ export async function GET() {
 | Document                          | Required | Notes                                  |
 | --------------------------------- | -------- | -------------------------------------- |
 | AGB (Terms of Service)            | Yes      | General terms and conditions            |
-| Datenschutzerklaerung (Privacy)   | Yes      | GDPR Art. 13/14                        |
+| Datenschutzerklärung (Privacy)   | Yes      | GDPR Art. 13/14                        |
 | Impressum                         | Yes      | DDG requirement                        |
 | AVV / DPA (Data Processing Agr.)  | B2B Yes  | Required when processing client data   |
 | Widerrufsbelehrung (Cancellation) | B2C Yes  | 14-day right of withdrawal             |

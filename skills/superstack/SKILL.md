@@ -189,7 +189,7 @@ With hosting credentials: git init → push to GitHub → connect hosting → co
 ## Phase 14: Optional Extras (offer at the end)
 
 - **Cost estimation**: Monthly breakdown for all services as low/medium/high table
-- **Legal texts** (German market): Impressum (DDG), Datenschutzerklaerung, AGB, Cookie-Richtlinie — always recommend lawyer review
+- **Legal texts** (German market): Impressum (DDG), Datenschutzerklärung, AGB, Cookie-Richtlinie — always recommend lawyer review
 - **Extended docs**: API docs (OpenAPI), component library (Storybook), ADRs
 
 ---
@@ -303,6 +303,7 @@ Only ask when the choice meaningfully impacts the project direction.
 - Output checkpoint summaries after each phase
 - Enforce quality gates between phases
 - Use conventional commit messages
+- When writing German text (copy, legal pages, UI labels, communication): use proper German characters (ä, ö, ü, ß, Ä, Ö, Ü). Never replace them with ae, oe, ue, ss. This applies to all generated content — HTML, JSX, markdown, JSON, database seeds, email templates. Code variables and file names stay ASCII (English).
 
 ---
 

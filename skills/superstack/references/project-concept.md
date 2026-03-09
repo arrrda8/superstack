@@ -187,7 +187,7 @@ graph TB
 ## 11. Legal & Compliance
 
 - [ ] Impressum (DDG-compliant, reachable within 2 clicks)
-- [ ] Datenschutzerklaerung (generated via Datenschutz-Generator.de)
+- [ ] Datenschutzerklärung (generated via Datenschutz-Generator.de)
 - [ ] Cookie Consent (Google Consent Mode v2, TCF 2.3)
 - [ ] GDPR Art. 17 deletion endpoint
 - [ ] Data export endpoint (EU Data Act)
